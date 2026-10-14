@@ -154,6 +154,23 @@ table{border-collapse:collapse;width:100%;}
 .noticia .r{font-size:12.5px;color:var(--text-muted);white-space:pre-line;overflow-wrap:anywhere;}
 .noticia .r.clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
 
+/* semana do time */
+.semana{padding:6px;}
+.semana-grid{display:grid;grid-template-columns:repeat(3,1fr);}
+.semana-grid > .empty,.semana-grid > .erro{grid-column:1/-1;padding:14px;}
+.semana-item{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:12px;color:var(--text);}
+.semana-item:hover{background:var(--bg);text-decoration:none;}
+.semana-item + .semana-item{border-left:1px solid var(--border);}
+.semana-ico{width:42px;height:42px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-size:21px;background:var(--purple-light);}
+.semana-ico.laranja{background:var(--orange-light);}
+.semana-ico.verde{background:#DCFCE7;}
+.semana-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--text-muted);}
+.semana-quando{font-size:12px;color:var(--purple);font-weight:600;margin-top:2px;}
+.semana-valor{font-family:'Sora',sans-serif;font-weight:700;font-size:15.5px;line-height:1.3;margin-top:2px;}
+.semana-sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.evento.feriado .data{background:var(--orange-light);color:var(--orange-text);}
+.evento .faltam{margin-left:auto;font-size:12px;font-weight:700;color:var(--orange);white-space:nowrap;}
+
 /* reconhecimentos */
 .rec-card{background:linear-gradient(160deg,#FFF7F1 0%,var(--card) 45%);}
 .rec-head,.aniv-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
@@ -351,6 +368,8 @@ table{border-collapse:collapse;width:100%;}
   .hero::after{display:none;}
   .mvv{grid-template-columns:1fr;}
   .noticias-grid{grid-template-columns:1fr;}
+  .semana-grid{grid-template-columns:1fr;}
+  .semana-item + .semana-item{border-left:0;border-top:1px solid var(--border);}
   .noticias-grid .noticia:nth-last-child(2):nth-child(odd){border-bottom:1px solid var(--border);}
 }
 @media (max-width:560px){
@@ -605,11 +624,13 @@ function carregarPlanilha(){
       .then(txt => Papa.parse(txt, { header:true, skipEmptyLines:true, transformHeader: norm }).data)
       .catch(err => { console.warn("Falha ao ler aba", u, err); return null; })
   )).then(abas => {
-    const out = { colaboradores:null, reconhecimentos:null, noticias:null };
+    const out = { colaboradores:null, reconhecimentos:null, noticias:null, agenda:null, escala:null };
     abas.forEach(linhas => {
       if (!linhas || !linhas.length) return;
       const cols = Object.keys(linhas[0]);
-      if (cols.includes("aniversario") || cols.includes("ramal")) out.colaboradores = linhas;
+      if (cols.includes("trabalham") || cols.includes("folgam")) out.escala = linhas;
+      else if (cols.includes("evento")) out.agenda = linhas;
+      else if (cols.includes("aniversario") || cols.includes("ramal")) out.colaboradores = linhas;
       else if (cols.includes("parceiro do mes") || cols.includes("atitude de impacto")) out.reconhecimentos = linhas;
       else if (cols.includes("titulo") || cols.includes("noticia")) out.noticias = linhas;
     });
@@ -617,6 +638,58 @@ function carregarPlanilha(){
   });
   return dadosPlanilha;
 }
+const DIAS_SEM = ["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const isoData = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const isoHoje = iso(hoje);
+const ddmm = d => `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
+const diasAte = s => Math.round((isoData(s) - isoData(isoHoje)) / 864e5);
+// "17/10/2026" ou "17/10" → "2026-10-17" (sem ano, usa o ano atual)
+function isoBR(s){
+  const m = String(s).match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+  if (!m) return "";
+  let y = m[3] ? +m[3] : hoje.getFullYear(); if (y < 100) y += 2000;
+  return `${y}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
+}
+
+/* Feriados nacionais (calculados para qualquer ano; a Páscoa define a Sexta-feira Santa) */
+function pascoa(y){
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
+        h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+        mes=Math.floor((h+l-7*m+114)/31),dia=((h+l-7*m+114)%31)+1;
+  return new Date(y, mes-1, dia);
+}
+function feriados(y){
+  const sexta = pascoa(y); sexta.setDate(sexta.getDate() - 2);
+  return [
+    ["01-01","Confraternização Universal"],[iso(sexta).slice(5),"Sexta-feira Santa"],["04-21","Tiradentes"],
+    ["05-01","Dia do Trabalho"],["09-07","Independência do Brasil"],["10-12","Nossa Senhora Aparecida"],
+    ["11-02","Finados"],["11-15","Proclamação da República"],["11-20","Dia Nacional de Zumbi e da Consciência Negra"],
+    ["12-25","Natal"]
+  ].map(([md, nome]) => ({ data:`${y}-${md}`, nome })).sort((a,b) => a.data.localeCompare(b.data));
+}
+const feriadosProximos = () => [...feriados(hoje.getFullYear()), ...feriados(hoje.getFullYear()+1)].filter(f => f.data >= isoHoje);
+const feriadoEm = s => feriados(+s.slice(0,4)).find(f => f.data === s);
+
+/* Agenda e escala: vêm das abas "Agenda" e "Escala" da planilha quando existirem;
+   senão, usam o conteúdo fixo do topo do arquivo. */
+function eventosDe(d){
+  if (d && d.agenda) return d.agenda.map(l => ({
+    data: isoBR(pega(l, "data")), titulo: pega(l, "evento"), hora: pega(l, "horario", "hora"), local: pega(l, "local")
+  })).filter(e => e.data && e.titulo).sort((a,b) => a.data.localeCompare(b.data));
+  return [...C.eventos].sort((a,b) => a.data.localeCompare(b.data));
+}
+function escalaDe(d){
+  if (d && d.escala){
+    const linhas = d.escala.map(l => ({
+      data: isoBR(pega(l, "sabado", "data")), trabalham: pega(l, "trabalham"), folgam: pega(l, "folgam"), obs: pega(l, "observacao", "obs")
+    })).filter(l => l.data && l.trabalham).sort((a,b) => a.data.localeCompare(b.data));
+    const ini = linhas[0], fim = linhas[linhas.length-1];
+    return { linhas, duplas: "", titulo: linhas.length ? `Escala de sábados — ${ddmm(isoData(ini.data))} a ${ddmm(isoData(fim.data))}/${fim.data.slice(0,4)}` : "Escala de sábados" };
+  }
+  return C.escalaSabados;
+}
+
 const msgErro = `<div class="erro">Não foi possível carregar a planilha. Verifique se ela continua publicada na web (Arquivo › Compartilhar › Publicar na Web).</div>`;
 const carregando = `<div class="empty">Carregando…</div>`;
 
@@ -681,6 +754,10 @@ function pageHome(){
       <a class="btn orange" href="${esc(C.formOpiniao)}" target="_blank" rel="noopener">Responder formulário ${I.ext}</a>
     </section>
 
+    <section class="card semana span-12">
+      <div class="semana-grid" id="boxSemana">${carregando}</div>
+    </section>
+
     <section class="card rec-card span-8">
       <div class="rec-head">
         <div class="rec-trofeu" aria-hidden="true">🏆</div>
@@ -712,6 +789,44 @@ function pageHome(){
 
 async function preencherHome(){
   const d = await carregarPlanilha();
+
+  // Semana do time: plantão de sábado, próximo feriado e próximo evento
+  const boxS = $("#boxSemana");
+  if (boxS){
+    const E = escalaDe(d);
+    const sab = E.linhas.find(l => l.data >= isoHoje);
+    const fer = feriadosProximos()[0];
+    const ev = eventosDe(d).find(e => e.data >= isoHoje);
+    const quandoTxt = s => { const n = diasAte(s); return n === 0 ? "hoje" : n === 1 ? "amanhã" : `em ${n} dias`; };
+    let plantao;
+    if (!sab) plantao = `<div class="semana-valor">Escala não publicada</div><div class="semana-sub">Fale com a supervisão.</div>`;
+    else {
+      const f = feriadoEm(sab.data);
+      const rot = sab.data === isoHoje ? "Hoje" : `Sábado, ${ddmm(isoData(sab.data))}`;
+      plantao = f
+        ? `<div class="semana-quando">${rot}</div><div class="semana-valor">Feriado 🎉</div><div class="semana-sub">${esc(f.nome)}: folga de todos</div>`
+        : `<div class="semana-quando">${rot}</div><div class="semana-valor">${esc(sab.trabalham)}</div>
+           <div class="semana-sub">Folgam: ${esc(sab.folgam)}${sab.obs ? ` · ${esc(sab.obs)}` : ""}</div>`;
+    }
+    boxS.innerHTML = `
+      <a class="semana-item" href="#agenda">
+        <div class="semana-ico" aria-hidden="true">🗓️</div>
+        <div style="min-width:0"><div class="semana-label">Plantão de sábado</div>${plantao}</div>
+      </a>
+      <a class="semana-item" href="#agenda">
+        <div class="semana-ico laranja" aria-hidden="true">🏖️</div>
+        <div style="min-width:0"><div class="semana-label">Próximo feriado</div>
+          <div class="semana-quando">${cap(DIAS_SEM[isoData(fer.data).getDay()])}, ${ddmm(isoData(fer.data))} · ${quandoTxt(fer.data)}</div>
+          <div class="semana-valor">${esc(fer.nome)}</div><div class="semana-sub">Folga de todos</div></div>
+      </a>
+      <a class="semana-item" href="#agenda">
+        <div class="semana-ico verde" aria-hidden="true">📌</div>
+        <div style="min-width:0"><div class="semana-label">Próximo evento</div>
+          ${ev ? `<div class="semana-quando">${cap(DIAS_SEM[isoData(ev.data).getDay()])}, ${ddmm(isoData(ev.data))} · ${quandoTxt(ev.data)}</div>
+                  <div class="semana-valor">${esc(ev.titulo)}</div>${ev.hora || ev.local ? `<div class="semana-sub">${esc([ev.hora, ev.local].filter(Boolean).join(" · "))}</div>` : ""}`
+               : `<div class="semana-valor">Nenhum evento agendado</div>`}</div>
+      </a>`;
+  }
 
   // Aniversariantes
   const boxA = $("#boxAniv");
@@ -929,39 +1044,54 @@ function pageQuemSomos(){
     </li>`).join("")}</ol>
   </div>`;
 }
-const DIAS_SEM = ["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
-const isoData = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
-const isoHoje = `${hoje.getFullYear()}-${String(mesAtual).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
 function eventoHtml(e){
   const d = isoData(e.data);
+  const info = [cap(DIAS_SEM[d.getDay()]), e.hora, e.local].filter(Boolean).join(" · ");
   return `<div class="evento${e.data < isoHoje ? " passado" : ""}">
     <div class="data"><b>${String(d.getDate()).padStart(2,"0")}</b><span>${MESES[d.getMonth()].slice(0,3)}</span></div>
     <div><div style="font-weight:600">${esc(e.titulo)}${e.data === isoHoje ? ' <span class="tag orange">Hoje</span>' : ""}</div>
-    <div class="muted" style="font-size:12.5px">${cap(DIAS_SEM[d.getDay()])}</div></div>
+    <div class="muted" style="font-size:12.5px">${esc(info)}</div></div>
+  </div>`;
+}
+function feriadoHtml(f){
+  const d = isoData(f.data), n = diasAte(f.data);
+  return `<div class="evento feriado">
+    <div class="data"><b>${String(d.getDate()).padStart(2,"0")}</b><span>${MESES[d.getMonth()].slice(0,3)}</span></div>
+    <div><div style="font-weight:600">${esc(f.nome)}</div>
+    <div class="muted" style="font-size:12.5px">${cap(DIAS_SEM[d.getDay()])} · Folga de todos</div></div>
+    <div class="faltam">${n === 0 ? "Hoje" : n === 1 ? "Amanhã" : `em ${n} dias`}</div>
   </div>`;
 }
 function pageAgenda(){
-  const ev = [...C.eventos].sort((a,b) => a.data.localeCompare(b.data));
+  return intro("Agenda", "Feedbacks, reuniões, escala de sábados e feriados do setor.") + `<div id="boxAgenda">${carregando}</div>`;
+}
+async function preencherAgenda(){
+  const d = await carregarPlanilha();
+  const box = $("#boxAgenda"); if (!box) return;
+  const ev = eventosDe(d);
   const prox = ev.filter(e => e.data >= isoHoje), pass = ev.filter(e => e.data < isoHoje).reverse();
-  const E = C.escalaSabados;
+  const E = escalaDe(d);
   const proxSab = (E.linhas.find(l => l.data >= isoHoje) || {}).data;
-  return intro("Agenda", "Feedbacks, reuniões e escala de sábados do setor.") +
+  const fer = feriadosProximos().slice(0, 6);
+  box.innerHTML =
     `<div class="section-title" style="margin-top:0">Próximos eventos</div>
      <div class="card">${prox.length ? prox.map(eventoHtml).join("") : `<div class="empty">Nenhum evento agendado.</div>`}</div>
      <div class="section-title">${esc(E.titulo)}</div>
-     <p class="muted" style="margin:-4px 0 12px">${esc(E.duplas)}</p>
-     <div class="card" style="padding:0"><div class="tbl-wrap"><table class="tbl escala">
+     ${E.duplas ? `<p class="muted" style="margin:-4px 0 12px">${esc(E.duplas)}</p>` : ""}
+     ${E.linhas.length ? `<div class="card" style="padding:0"><div class="tbl-wrap"><table class="tbl escala">
        <thead><tr><th>Sábado</th><th>Trabalham</th><th>Folgam</th><th>Observação</th></tr></thead>
        <tbody>${E.linhas.map(l => {
-         const d = isoData(l.data);
          const cls = l.data === proxSab ? "prox" : l.data < isoHoje ? "passado" : "";
+         const fer = feriadoEm(l.data);
          return `<tr class="${cls}">
-           <td class="ramal">${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}${l.data === proxSab ? ' <span class="tag orange">Próximo</span>' : ""}</td>
+           <td class="ramal">${ddmm(isoData(l.data))}${l.data === proxSab ? ' <span class="tag orange">Próximo</span>' : ""}</td>
            <td><b>${esc(l.trabalham)}</b></td>
            <td class="muted">${esc(l.folgam)}</td>
-           <td class="muted">${esc(l.obs || "—")}</td>
+           <td class="muted">${esc([fer ? `Feriado: ${fer.nome}` : "", l.obs].filter(Boolean).join(" · ") || "—")}</td>
          </tr>`; }).join("")}</tbody>
-     </table></div></div>` +
+     </table></div></div>` : `<div class="card"><div class="empty">A escala de sábados ainda não foi publicada.</div></div>`}
+     <div class="section-title">Próximos feriados nacionais</div>
+     <div class="card">${fer.map(feriadoHtml).join("")}</div>` +
     (pass.length ? `<div class="section-title">Eventos realizados</div><div class="card">${pass.map(eventoHtml).join("")}</div>` : "");
 }
 
@@ -1040,7 +1170,7 @@ function renderFooter(){
 /* ---------- ROTEAMENTO ---------- */
 const RENDER = { home:pageHome, central:pageCentral, material:pageMaterial, plataformas:pagePlataformas,
   comunicacao:pageComunicacao, "quem-somos":pageQuemSomos, agenda:pageAgenda, comissionamento:pageComissionamento };
-const APOS = { home:preencherHome, comunicacao:preencherTime };
+const APOS = { home:preencherHome, comunicacao:preencherTime, agenda:preencherAgenda };
 function rotaAtual(){ const r = location.hash.slice(1); return RENDER[r] ? r : "home"; }
 function navegar(){
   const r = rotaAtual();

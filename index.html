@@ -154,6 +154,86 @@ table{border-collapse:collapse;width:100%;}
 .noticia .r{font-size:12.5px;color:var(--text-muted);white-space:pre-line;overflow-wrap:anywhere;}
 .noticia .r.clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
 
+/* reconhecimentos */
+.rec-card{background:linear-gradient(160deg,#FFF7F1 0%,var(--card) 45%);}
+.rec-head,.aniv-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.rec-head h3,.aniv-head h3{margin:0;font-size:17px;}
+.rec-trofeu,.aniv-ico{
+  width:46px;height:46px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;font-size:24px;
+  background:linear-gradient(135deg,#FFD66B,#FF9F45);box-shadow:0 4px 12px rgba(255,112,41,.25);
+}
+.aniv-ico{background:linear-gradient(135deg,#FF9AC8,#B39BFF);box-shadow:0 4px 12px rgba(112,99,240,.25);}
+.rec-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--orange);}
+.premios{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.premio{
+  --c1:#7063F0;--c2:#EEEBFF;
+  position:relative;overflow:hidden;border-radius:14px;padding:14px;
+  background:linear-gradient(135deg,var(--c2),#fff 75%);border:1px solid color-mix(in srgb,var(--c1) 22%,transparent);
+  transition:transform .2s,box-shadow .2s;
+}
+.premio:hover{transform:translateY(-3px);box-shadow:0 8px 20px color-mix(in srgb,var(--c1) 20%,transparent);}
+.premio::after{
+  content:"";position:absolute;top:-40%;left:-60%;width:40%;height:180%;transform:rotate(20deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);animation:brilho 5s ease-in-out infinite;
+}
+.premio.laranja{--c1:#FF7029;--c2:#FFE9DD;}
+.premio.verde{--c1:#16A34A;--c2:#DCFCE7;}
+.premio.azul{--c1:#2563EB;--c2:#DBEAFE;}
+.premio-topo{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.premio-emoji{font-size:20px;}
+.premio-cat{font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:800;color:var(--c1);}
+.premio-corpo{display:flex;align-items:center;gap:12px;}
+.premio-avatar{
+  position:relative;width:48px;height:48px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+  font-family:'Sora',sans-serif;font-weight:800;font-size:15px;color:#fff;background:var(--c1);
+  box-shadow:0 0 0 3px #fff,0 0 0 5px color-mix(in srgb,var(--c1) 35%,transparent);
+}
+.premio-medalha{position:absolute;right:-8px;bottom:-6px;font-size:18px;}
+.premio-nome{font-family:'Sora',sans-serif;font-weight:700;font-size:15px;line-height:1.25;}
+.premio-frase{font-size:12px;color:var(--text-muted);}
+.premio-valor{
+  margin-top:10px;display:inline-block;font-size:12px;color:var(--c1);font-weight:600;
+  background:#fff;border-radius:999px;padding:3px 10px;border:1px solid color-mix(in srgb,var(--c1) 25%,transparent);
+}
+.premio-valor b{font-family:'Sora',sans-serif;font-size:14px;}
+.rec-rodape{margin-top:14px;font-size:12.5px;color:var(--text-muted);text-align:center;}
+@keyframes brilho{0%,70%{left:-60%;}100%{left:130%;}}
+
+/* aniversários */
+.aniv-card{background:linear-gradient(170deg,#F4F0FF 0%,var(--card) 50%);}
+.festa{
+  position:relative;overflow:hidden;text-align:center;border-radius:14px;padding:20px 14px 16px;margin-bottom:12px;
+  background:linear-gradient(135deg,var(--purple-deep),var(--purple) 55%,#B074F0);color:#fff;
+}
+.festa-bolo{font-size:40px;line-height:1;animation:pula 1.6s ease-in-out infinite;}
+.festa-tag{display:inline-block;margin-top:8px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;background:var(--orange);border-radius:999px;padding:3px 10px;}
+.festa-nome{font-family:'Sora',sans-serif;font-weight:800;font-size:20px;margin-top:8px;}
+.festa-msg{font-size:12.5px;opacity:.9;margin-top:4px;}
+.confete{position:absolute;inset:0;pointer-events:none;}
+.confete i{
+  position:absolute;top:-12px;left:calc(var(--i) * 5.6%);width:7px;height:11px;border-radius:2px;opacity:.9;
+  background:hsl(calc(var(--i) * 47) 95% 65%);
+  animation:cai calc(2.6s + (var(--i) * 0.13s)) linear infinite;animation-delay:calc(var(--i) * -0.37s);
+}
+.confete i:nth-child(3n){width:8px;height:8px;border-radius:50%;}
+@keyframes cai{0%{transform:translateY(0) rotate(0);}100%{transform:translateY(240px) rotate(540deg);}}
+@keyframes pula{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+.aniv-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+.aniv-lista li{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px 10px;}
+.aniv-lista li.passou{opacity:.6;}
+.aniv-lista .t{font-weight:600;}
+.aniv-lista .s{font-size:12px;color:var(--text-muted);}
+.aniv-data{width:44px;flex:none;text-align:center;border-radius:10px;padding:4px 0;background:linear-gradient(135deg,#FFB3D6,#C7B8FF);color:var(--purple-deep);}
+.aniv-data b{display:block;font-family:'Sora',sans-serif;font-size:17px;line-height:1.1;}
+.aniv-data span{font-size:10px;text-transform:uppercase;font-weight:700;}
+.aniv-emoji{margin-left:auto;font-size:20px;}
+.aniv-vazio{text-align:center;color:var(--text-muted);padding:18px 0;font-size:13px;}
+.aniv-vazio div{font-size:30px;margin-bottom:6px;}
+
+.noticias-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0 28px;}
+.noticias-grid .noticia:nth-last-child(2):nth-child(odd){border-bottom:0;}
+.noticias-grid > .empty,.noticias-grid > .erro{grid-column:1/-1;}
+
 .opiniao{background:var(--dark);color:#fff;border:0;}
 .opiniao h3{color:#fff;}
 .opiniao p{color:#B7BAC6;margin:0 0 16px;}
@@ -270,9 +350,15 @@ table{border-collapse:collapse;width:100%;}
   .hero{padding:22px 18px;}
   .hero::after{display:none;}
   .mvv{grid-template-columns:1fr;}
+  .noticias-grid{grid-template-columns:1fr;}
+  .noticias-grid .noticia:nth-last-child(2):nth-child(odd){border-bottom:1px solid var(--border);}
+}
+@media (max-width:560px){
+  .premios{grid-template-columns:1fr;}
 }
 @media (prefers-reduced-motion:reduce){
-  *{transition:none !important;}
+  *{transition:none !important;animation:none !important;}
+  .confete{display:none;}
 }
 </style>
 </head>
@@ -595,19 +681,31 @@ function pageHome(){
       <a class="btn orange" href="${esc(C.formOpiniao)}" target="_blank" rel="noopener">Responder formulário ${I.ext}</a>
     </section>
 
-    <section class="card span-4">
-      ${cardTitulo("cake",`Aniversariantes de ${MESES[hoje.getMonth()]}`)}
-      <div id="boxAniv">${carregando}</div>
-    </section>
-
-    <section class="card span-4">
-      ${cardTitulo("star","Reconhecimentos do mês","tituloRec")}
+    <section class="card rec-card span-8">
+      <div class="rec-head">
+        <div class="rec-trofeu" aria-hidden="true">🏆</div>
+        <div>
+          <div class="rec-eyebrow">Quem brilhou no mês</div>
+          <h3 id="tituloRec">Reconhecimentos</h3>
+        </div>
+      </div>
       <div id="boxRec">${carregando}</div>
     </section>
 
-    <section class="card span-4">
+    <section class="card aniv-card span-4">
+      <div class="aniv-head">
+        <div class="aniv-ico" aria-hidden="true">🎈</div>
+        <div>
+          <div class="rec-eyebrow">Parabéns a você!</div>
+          <h3>Aniversariantes de ${MESES[hoje.getMonth()]}</h3>
+        </div>
+      </div>
+      <div id="boxAniv">${carregando}</div>
+    </section>
+
+    <section class="card span-12">
       ${cardTitulo("news","Últimas notícias")}
-      <div id="boxNot">${carregando}</div>
+      <div id="boxNot" class="noticias-grid">${carregando}</div>
     </section>
   </div>`;
 }
@@ -621,13 +719,29 @@ async function preencherHome(){
     if (!d.colaboradores) boxA.innerHTML = msgErro;
     else {
       const anivs = colaboradores(d).filter(c => c.mes === mesAtual).sort((a,b) => a.dia - b.dia);
-      boxA.innerHTML = anivs.length ? `<ul class="list">${anivs.map(a => {
-        const eHoje = a.dia === hoje.getDate();
-        return `<li class="${eHoje?"hoje":""}">
-          <div class="avatar orange">${esc(iniciais(a.nome))}</div>
-          <div><div class="t">${esc(a.nome)}</div><div class="s">${eHoje ? "Aniversário hoje! 🎉" : "Aniversário"}</div></div>
-          <div class="dia">${String(a.dia).padStart(2,"0")}/${String(a.mes).padStart(2,"0")}</div>
-        </li>`; }).join("")}</ul>` : `<div class="empty">Nenhum aniversariante este mês.</div>`;
+      const dHoje = hoje.getDate();
+      const festa = anivs.filter(a => a.dia === dHoje);
+      const outros = anivs.filter(a => a.dia !== dHoje);
+      const quando = a => {
+        const n = a.dia - dHoje;
+        return n === 1 ? "É amanhã! 🥳" : n > 1 ? `Faltam ${n} dias` : "Já comemoramos 💜";
+      };
+      let html = "";
+      if (festa.length) html += festa.map(a => `
+        <div class="festa">
+          <div class="confete" aria-hidden="true">${Array.from({length:18}, (_, i) => `<i style="--i:${i}"></i>`).join("")}</div>
+          <div class="festa-bolo" aria-hidden="true">🎂</div>
+          <div class="festa-tag">Hoje é dia de festa!</div>
+          <div class="festa-nome">${esc(a.nome)}</div>
+          <div class="festa-msg">Parabéns! Que seu novo ano seja cheio de conquistas. 🎉</div>
+        </div>`).join("");
+      if (outros.length) html += `<ul class="aniv-lista">${outros.map(a => `
+        <li class="${a.dia < dHoje ? "passou" : ""}">
+          <div class="aniv-data"><b>${String(a.dia).padStart(2,"0")}</b><span>${MESES[a.mes-1].slice(0,3)}</span></div>
+          <div><div class="t">${esc(a.nome)}</div><div class="s">${quando(a)}</div></div>
+          <div class="aniv-emoji" aria-hidden="true">${a.dia < dHoje ? "🎁" : "🎈"}</div>
+        </li>`).join("")}</ul>`;
+      boxA.innerHTML = html || `<div class="aniv-vazio"><div aria-hidden="true">🗓️</div>Nenhum aniversariante este mês.</div>`;
     }
   }
 
@@ -644,17 +758,27 @@ async function preencherHome(){
         const l = alvo.l;
         $("#tituloRec").textContent = `Reconhecimentos — ${mesLabel(alvo.k)}`;
         const itens = [
-          { cat:"Parceiro do mês",    nome: pega(l, "parceiro do mes") },
-          { cat:"Atitude de impacto", nome: pega(l, "atitude de impacto") },
-          { cat:"Destaque em monitoria", nome: pega(l, "monitoria"), extra: pega(l, "monitoria nota") },
-          { cat:"Crescimento",        nome: pega(l, "crescimento"), extra: pega(l, "crescimento valor") }
+          { cat:"Parceiro do mês",       emoji:"🤝", cor:"roxo",    frase:"Sempre pronto(a) para ajudar o time.", nome: pega(l, "parceiro do mes") },
+          { cat:"Atitude de impacto",    emoji:"⚡", cor:"laranja", frase:"Fez a diferença no dia a dia.",       nome: pega(l, "atitude de impacto") },
+          { cat:"Destaque em monitoria", emoji:"🎯", cor:"verde",   frase:"Excelência no atendimento.",          nome: pega(l, "monitoria"), extra: pega(l, "monitoria nota"), extraLabel:"de nota" },
+          { cat:"Crescimento",           emoji:"🚀", cor:"azul",    frase:"Evoluiu muito neste mês.",            nome: pega(l, "crescimento"), extra: pega(l, "crescimento valor"), extraLabel:"de crescimento" }
         ].filter(i => i.nome);
-        boxR.innerHTML = itens.length ? `<ul class="list">${itens.map(i => `
-          <li>
-            <div class="avatar">${esc(iniciais(i.nome))}</div>
-            <div><div class="t">${esc(i.nome)}</div><span class="tag orange">${esc(i.cat)}</span></div>
-            ${i.extra ? `<div class="dia">${esc(i.extra)}</div>` : ""}
-          </li>`).join("")}</ul>` : `<div class="empty">Nenhum reconhecimento neste mês.</div>`;
+        boxR.innerHTML = itens.length ? `<div class="premios">${itens.map(i => `
+          <div class="premio ${i.cor}">
+            <div class="premio-topo">
+              <span class="premio-emoji" aria-hidden="true">${i.emoji}</span>
+              <span class="premio-cat">${esc(i.cat)}</span>
+            </div>
+            <div class="premio-corpo">
+              <div class="premio-avatar">${esc(iniciais(i.nome))}<span class="premio-medalha" aria-hidden="true">🏅</span></div>
+              <div style="min-width:0">
+                <div class="premio-nome">${esc(i.nome)}</div>
+                <div class="premio-frase">${esc(i.frase)}</div>
+              </div>
+            </div>
+            ${i.extra ? `<div class="premio-valor"><b>${esc(i.extra)}</b> ${esc(i.extraLabel)}</div>` : ""}
+          </div>`).join("")}</div>
+          <div class="rec-rodape">👏 Parabéns a todos pelo empenho! Continue assim, time.</div>` : `<div class="empty">Nenhum reconhecimento neste mês.</div>`;
       }
     }
   }

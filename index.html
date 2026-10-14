@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agility — Contas a Receber</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --purple:#7063F0;
+  --purple-dark:#5347d1;
+  --purple-deep:#372E99;
+  --purple-light:#EEEBFF;
+  --orange:#FF7029;
+  --orange-light:#FFE9DD;
+  --dark:#1C1F26;
+  --dark-2:#262A33;
+  --bg:#F5F6FA;
+  --card:#FFFFFF;
+  --text:#1C1F26;
+  --text-muted:#6B7280;
+  --border:#E7E8EF;
+  --radius:14px;
+  --shadow:0 2px 10px rgba(28,31,38,0.06);
+  /* cor da campanha do mês (definida via JS) */
+  --campanha:#FF7029;
+  --campanha-light:#FFE9DD;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:'Sora',sans-serif;margin:0;letter-spacing:-0.01em;}
+a{color:var(--purple);text-decoration:none;}
+a:hover{text-decoration:underline;}
+button{font-family:inherit;cursor:pointer;}
+table{border-collapse:collapse;width:100%;}
+
+/* ---------- LAYOUT ---------- */
+#app{display:flex;min-height:100vh;}
+.sidebar{
+  width:250px;flex:none;background:var(--dark);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;z-index:40;
+}
+.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.sidebar-logo img{width:150px;display:block;}
+.sidebar-logo .sub{color:#8B8F9E;font-size:11.5px;margin-top:8px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;}
+.nav{flex:1;padding:14px 10px;overflow-y:auto;}
+.nav a{text-decoration:none;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;margin-bottom:2px;border-radius:10px;
+  color:#B7BAC6;font-size:13.5px;font-weight:500;transition:background .15s,color .15s;
+}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:#fff;}
+.nav-item.active{background:var(--purple);color:#fff;}
+.nav-item svg{width:17px;height:17px;flex:none;}
+.nav-toggle{
+  background:none;border:0;color:inherit;padding:0;margin-left:-4px;
+  width:16px;height:16px;display:flex;align-items:center;justify-content:center;flex:none;
+  transition:transform .15s;
+}
+.nav-toggle.closed{transform:rotate(-90deg);}
+.nav-children{padding-left:22px;}
+.nav-children.hidden{display:none;}
+.nav-children .nav-item{font-size:13px;padding:8px 12px;}
+.sidebar-footer{padding:14px 18px;border-top:1px solid rgba(255,255,255,0.08);color:#8B8F9E;font-size:11.5px;}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:14px 28px;display:flex;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:20;
+}
+.topbar .chevron{color:var(--orange);font-family:'Sora',sans-serif;font-weight:800;font-size:20px;}
+.topbar h1{font-size:19px;}
+.breadcrumb{color:var(--text-muted);font-size:12.5px;margin-left:auto;}
+.menu-btn{display:none;background:none;border:0;padding:4px;color:var(--text);}
+.menu-btn svg{width:22px;height:22px;}
+.content{padding:24px 28px 40px;flex:1;max-width:1300px;width:100%;}
+
+/* ---------- COMPONENTES ---------- */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;}
+.card h3{font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.card h3 .ico{color:var(--purple);display:flex;}
+.card h3 .ico svg{width:18px;height:18px;}
+.grid{display:grid;gap:18px;}
+.grid-home{grid-template-columns:repeat(12,1fr);}
+.span-4{grid-column:span 4;}
+.span-6{grid-column:span 6;}
+.span-8{grid-column:span 8;}
+.span-12{grid-column:span 12;}
+.muted{color:var(--text-muted);}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--purple-light);color:var(--purple-deep);}
+.tag.orange{background:var(--orange-light);color:#99400C;}
+.exemplo{font-size:11px;color:var(--text-muted);font-style:italic;margin-top:10px;}
+
+.btn{
+  display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;
+  background:var(--purple);color:#fff;font-weight:600;font-size:13px;padding:10px 16px;text-decoration:none;
+}
+.btn:hover{background:var(--purple-dark);text-decoration:none;}
+.btn.ghost{background:var(--purple-light);color:var(--purple-deep);}
+.btn.orange{background:var(--orange);}
+.btn svg{width:16px;height:16px;}
+
+/* hero */
+.hero{
+  background:linear-gradient(120deg,var(--purple-deep),var(--purple) 70%);
+  color:#fff;border-radius:var(--radius);padding:26px 28px;position:relative;overflow:hidden;
+}
+.hero::after{
+  content:"›";position:absolute;right:28px;top:50%;transform:translateY(-55%);
+  font-family:'Sora',sans-serif;font-weight:800;font-size:180px;color:rgba(255,255,255,0.08);line-height:1;
+}
+.hero .hello{font-size:13px;opacity:.85;}
+.hero h2{font-size:24px;margin:4px 0 14px;}
+.hero .frase{font-size:16px;max-width:760px;font-style:italic;position:relative;z-index:1;}
+.hero .frase-autor{font-size:12.5px;opacity:.8;margin-top:6px;}
+.hero .frase-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--orange-light);margin-bottom:4px;}
+
+/* campanha */
+.campanha{border-left:6px solid var(--campanha);background:linear-gradient(90deg,var(--campanha-light),var(--card) 60%);}
+.campanha .laco{width:44px;height:44px;border-radius:12px;background:var(--campanha);display:flex;align-items:center;justify-content:center;color:#fff;flex:none;}
+.campanha .laco svg{width:24px;height:24px;}
+.campanha-head{display:flex;gap:14px;align-items:center;margin-bottom:10px;}
+.campanha-head h4{font-size:17px;}
+
+/* listas */
+.list{list-style:none;margin:0;padding:0;}
+.list li{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);}
+.list li:last-child{border-bottom:0;}
+.avatar{
+  width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+  font-family:'Sora',sans-serif;font-weight:700;font-size:13px;background:var(--purple-light);color:var(--purple-deep);
+}
+.avatar.orange{background:var(--orange-light);color:#99400C;}
+.list .t{font-weight:600;}
+.list .s{font-size:12.5px;color:var(--text-muted);}
+.dia{margin-left:auto;font-family:'Sora',sans-serif;font-weight:700;color:var(--orange);font-size:13px;white-space:nowrap;}
+.hoje{background:var(--orange-light);border-radius:10px;padding-left:8px !important;padding-right:8px !important;}
+
+.noticia{display:block;padding:12px 0;border-bottom:1px solid var(--border);color:var(--text);}
+.noticia:last-child{border-bottom:0;}
+.noticia:hover{text-decoration:none;}
+.noticia:hover .t{color:var(--purple);}
+.noticia .d{font-size:11.5px;color:var(--text-muted);}
+.noticia .t{font-weight:600;margin:2px 0;}
+.noticia .r{font-size:12.5px;color:var(--text-muted);}
+
+.opiniao{background:var(--dark);color:#fff;border:0;}
+.opiniao h3{color:#fff;}
+.opiniao p{color:#B7BAC6;margin:0 0 16px;}
+
+/* indicadores */
+.ind-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.ind-head h3{margin:0;}
+.ind-head .filters{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+.select{border:1px solid var(--border);background:var(--bg);border-radius:9px;padding:7px 10px;font-size:12.5px;color:var(--text);}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.kpi{background:var(--bg);border-radius:12px;padding:12px 14px;}
+.kpi .l{font-size:11.5px;color:var(--text-muted);font-weight:600;}
+.kpi .v{font-family:'Sora',sans-serif;font-weight:700;font-size:20px;margin-top:2px;}
+.ind-body{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;align-items:start;}
+.chart-box{position:relative;height:280px;}
+.tbl{font-size:12.5px;}
+.tbl th{text-align:left;color:var(--text-muted);font-weight:600;font-size:11.5px;padding:8px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.tbl td{padding:8px;border-bottom:1px solid var(--border);}
+.tbl tr:last-child td{border-bottom:0;}
+.tbl td.n{text-align:right;font-variant-numeric:tabular-nums;}
+.tbl th.n{text-align:right;}
+.meta-ok{color:#15803D;font-weight:600;}
+.meta-no{color:#B91C1C;font-weight:600;}
+.tbl-wrap{overflow-x:auto;}
+
+/* páginas internas */
+.page-intro{margin-bottom:18px;max-width:820px;}
+.page-intro p{color:var(--text-muted);margin:6px 0 0;}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+.tile{
+  display:flex;flex-direction:column;gap:6px;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px;color:var(--text);box-shadow:var(--shadow);transition:border-color .15s,transform .15s;
+}
+.tile:hover{border-color:var(--purple);transform:translateY(-2px);text-decoration:none;}
+.tile .ti{width:38px;height:38px;border-radius:10px;background:var(--purple-light);color:var(--purple);display:flex;align-items:center;justify-content:center;}
+.tile .ti svg{width:20px;height:20px;}
+.tile .tt{font-family:'Sora',sans-serif;font-weight:700;font-size:14.5px;}
+.tile .td{font-size:12.5px;color:var(--text-muted);}
+.tile .tc{font-size:11px;color:var(--purple);font-weight:600;margin-top:auto;}
+.section-title{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:700;margin:26px 0 12px;}
+.section-title:first-child{margin-top:0;}
+.prose{max-width:860px;}
+.prose p{margin:0 0 12px;}
+.prose h3{font-size:16px;margin:20px 0 8px;}
+.prose ul{margin:0 0 12px;padding-left:20px;}
+.valores{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:8px;}
+.valor{background:var(--purple-light);border-radius:12px;padding:14px;}
+.valor b{display:block;font-family:'Sora',sans-serif;color:var(--purple-deep);margin-bottom:4px;}
+.equipe{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.membro{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;}
+.evento{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);}
+.evento:last-child{border-bottom:0;}
+.evento .data{
+  width:56px;flex:none;text-align:center;background:var(--purple-light);border-radius:10px;padding:6px 0;color:var(--purple-deep);
+}
+.evento .data b{display:block;font-family:'Sora',sans-serif;font-size:20px;line-height:1.1;}
+.evento .data span{font-size:11px;text-transform:uppercase;font-weight:600;}
+.evento.passado{opacity:.55;}
+.faixas td,.faixas th{padding:10px 12px;}
+.callout{background:var(--orange-light);border-radius:12px;padding:14px 16px;color:#7A330A;font-size:13px;margin:12px 0;}
+.empty{color:var(--text-muted);font-size:13px;padding:10px 0;}
+
+/* footer */
+.footer{background:var(--dark);color:#B7BAC6;padding:28px 28px 18px;margin-top:auto;}
+.footer-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:24px;max-width:1300px;}
+.footer h4{color:#fff;font-size:13px;margin-bottom:10px;}
+.footer a{color:#B7BAC6;}
+.footer a:hover{color:#fff;}
+.footer ul{list-style:none;margin:0;padding:0;}
+.footer li{margin-bottom:6px;font-size:13px;}
+.footer .addr{font-size:13px;white-space:pre-line;}
+.footer .copy{border-top:1px solid rgba(255,255,255,0.08);margin-top:20px;padding-top:14px;font-size:11.5px;color:#6B7080;}
+
+.overlay{display:none;}
+
+@media (max-width:1100px){
+  .span-4,.span-6,.span-8{grid-column:span 12;}
+  .ind-body{grid-template-columns:1fr;}
+}
+@media (max-width:860px){
+  .sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .2s;}
+  .sidebar.open{transform:none;}
+  .overlay.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:30;}
+  .menu-btn{display:flex;}
+  .topbar{padding:12px 16px;}
+  .breadcrumb{display:none;}
+  .content{padding:16px 16px 32px;}
+  .kpis{grid-template-columns:repeat(2,1fr);}
+  .footer{padding:24px 16px 16px;}
+  .footer-grid{grid-template-columns:1fr;}
+  .hero{padding:22px 18px;}
+  .hero::after{display:none;}
+}
+</style>
+</head>
+<body>
+
+<script>
+/* =====================================================================
+   CONTEÚDO DO SITE — edite aqui.
+   Tudo o que aparece nas páginas vem deste objeto. Os itens marcados
+   como "exemplo" são só para mostrar o formato: troque pelos reais.
+   ===================================================================== */
+const CONTEUDO = {
+  setor: "Contas a Receber",
+
+  // Link do Google Forms "Deixe sua opinião"
+  formOpiniao: "https://forms.gle/SEU-FORMULARIO",
+
+  // Frases motivacionais — uma é escolhida por dia (muda automaticamente)
+  frases: [
+    { texto: "O sucesso é a soma de pequenos esforços repetidos dia após dia.", autor: "Robert Collier" },
+    { texto: "A persistência é o caminho do êxito.", autor: "Charles Chaplin" },
+    { texto: "Grandes coisas não são feitas por impulso, mas pela união de pequenas coisas.", autor: "Vincent van Gogh" },
+    { texto: "Qualidade não é um ato, é um hábito.", autor: "Aristóteles" },
+    { texto: "Sozinhos vamos mais rápido; juntos vamos mais longe.", autor: "Provérbio africano" },
+    { texto: "Faça o seu melhor, na condição que você tem, enquanto não tem condições melhores para fazer melhor ainda.", autor: "Mario Sergio Cortella" },
+    { texto: "Não espere por oportunidades extraordinárias. Agarre ocasiões comuns e as torne grandes.", autor: "Orison Swett Marden" },
+    { texto: "O cliente satisfeito é a melhor estratégia de negócio.", autor: "Michael LeBoeuf" },
+    { texto: "Comece onde você está. Use o que você tem. Faça o que você pode.", autor: "Arthur Ashe" },
+    { texto: "A excelência não é um destino, é uma jornada contínua.", autor: "Brian Tracy" }
+  ],
+
+  // Campanhas por mês (1 = janeiro … 12 = dezembro)
+  campanhas: {
+    1:  { nome: "Janeiro Branco",    cor: "#94A3B8", tema: "Saúde mental e emocional", texto: "Um mês para cuidar da mente. Converse, desacelere e peça ajuda quando precisar." },
+    2:  { nome: "Fevereiro Roxo",    cor: "#7C3AED", tema: "Lúpus, Alzheimer e fibromialgia", texto: "Informação e acolhimento para quem convive com doenças crônicas." },
+    3:  { nome: "Março Lilás",       cor: "#A78BFA", tema: "Prevenção do câncer do colo do útero", texto: "Faça seus exames preventivos regularmente." },
+    4:  { nome: "Abril Verde",       cor: "#16A34A", tema: "Segurança e saúde no trabalho", texto: "Prevenir acidentes e cuidar da ergonomia é responsabilidade de todos." },
+    5:  { nome: "Maio Amarelo",      cor: "#EAB308", tema: "Segurança no trânsito", texto: "No trânsito, escolha a vida: atenção, respeito e prudência." },
+    6:  { nome: "Junho Vermelho",    cor: "#DC2626", tema: "Doação de sangue", texto: "Uma doação pode salvar até quatro vidas. Procure o hemocentro mais próximo." },
+    7:  { nome: "Julho Amarelo",     cor: "#EAB308", tema: "Combate às hepatites virais", texto: "Vacine-se e faça o teste. A prevenção é o melhor caminho." },
+    8:  { nome: "Agosto Dourado",    cor: "#D4A017", tema: "Incentivo ao aleitamento materno", texto: "Apoiar quem amamenta é apoiar a saúde da próxima geração." },
+    9:  { nome: "Setembro Amarelo",  cor: "#EAB308", tema: "Prevenção ao suicídio", texto: "Falar é a melhor solução. Se precisar, ligue 188 (CVV) — 24 horas, gratuito." },
+    10: { nome: "Outubro Rosa",      cor: "#EC4899", tema: "Prevenção do câncer de mama", texto: "O diagnóstico precoce salva vidas. Faça o autoexame e mantenha a mamografia em dia." },
+    11: { nome: "Novembro Azul",     cor: "#2563EB", tema: "Saúde do homem e câncer de próstata", texto: "Cuidar da saúde também é coisa de homem. Faça seus exames." },
+    12: { nome: "Dezembro Vermelho", cor: "#DC2626", tema: "Prevenção ao HIV/Aids e ISTs", texto: "Informe-se, previna-se e faça o teste." }
+  },
+
+  // Aniversariantes (dia/mês) — exemplo
+  aniversariantes: [
+    { nome: "Colaborador(a) A", area: "Contas a Receber", dia: 3,  mes: 10 },
+    { nome: "Colaborador(a) B", area: "Cobrança",         dia: 14, mes: 10 },
+    { nome: "Colaborador(a) C", area: "Contas a Receber", dia: 27, mes: 10 },
+    { nome: "Colaborador(a) D", area: "Faturamento",      dia: 8,  mes: 11 }
+  ],
+
+  // Reconhecimentos (mes no formato AAAA-MM) — exemplo
+  reconhecimentos: [
+    { mes: "2026-10", nome: "Colaborador(a) A", titulo: "Destaque do mês",       motivo: "Maior índice de satisfação do setor." },
+    { mes: "2026-10", nome: "Colaborador(a) B", titulo: "Melhor recuperação",    motivo: "Maior volume de acordos fechados." },
+    { mes: "2026-10", nome: "Colaborador(a) C", titulo: "Espírito de equipe",    motivo: "Apoio aos colegas em treinamentos." }
+  ],
+
+  // Últimas notícias da empresa — exemplo (mais recentes primeiro)
+  noticias: [
+    { data: "2026-10-10", titulo: "Título da notícia mais recente", resumo: "Resumo curto da notícia. Troque pelo conteúdo real.", link: "#" },
+    { data: "2026-10-02", titulo: "Novo processo de negociação",     resumo: "Resumo curto da notícia. Troque pelo conteúdo real.", link: "#" },
+    { data: "2026-09-25", titulo: "Resultado do trimestre",          resumo: "Resumo curto da notícia. Troque pelo conteúdo real.", link: "#" }
+  ],
+
+  /* Indicadores de qualidade por agente e por mês.
+     Opção 1: preencha a lista "indicadores" abaixo.
+     Opção 2: publique uma planilha do Google como CSV (Arquivo › Compartilhar ›
+     Publicar na Web › CSV) e cole o link em "indicadoresCsv". A planilha deve ter
+     as colunas: mes, agente, atendimentos, satisfacao, resolucao, tma
+     (mes = AAAA-MM; satisfacao e resolucao em %; tma em minutos). */
+  indicadoresCsv: "",
+  metas: { satisfacao: 90, resolucao: 85, tma: 8 },
+  indicadores: [
+    // exemplo
+    { mes:"2026-09", agente:"Agente 1", atendimentos:412, satisfacao:93, resolucao:88, tma:7.2 },
+    { mes:"2026-09", agente:"Agente 2", atendimentos:385, satisfacao:89, resolucao:84, tma:8.4 },
+    { mes:"2026-09", agente:"Agente 3", atendimentos:398, satisfacao:91, resolucao:90, tma:6.9 },
+    { mes:"2026-09", agente:"Agente 4", atendimentos:350, satisfacao:86, resolucao:81, tma:9.1 },
+    { mes:"2026-09", agente:"Agente 5", atendimentos:367, satisfacao:94, resolucao:87, tma:7.6 },
+    { mes:"2026-10", agente:"Agente 1", atendimentos:240, satisfacao:95, resolucao:89, tma:7.0 },
+    { mes:"2026-10", agente:"Agente 2", atendimentos:221, satisfacao:90, resolucao:86, tma:8.0 },
+    { mes:"2026-10", agente:"Agente 3", atendimentos:233, satisfacao:88, resolucao:91, tma:7.1 },
+    { mes:"2026-10", agente:"Agente 4", atendimentos:205, satisfacao:89, resolucao:83, tma:8.6 },
+    { mes:"2026-10", agente:"Agente 5", atendimentos:214, satisfacao:96, resolucao:88, tma:7.4 }
+  ],
+
+  /* ---------- CENTRAL DE TRABALHO ---------- */
+  centralIntro: "Tudo o que você precisa no dia a dia: materiais de apoio, acesso às plataformas e planilhas do setor.",
+  materialApoio: [
+    // categoria agrupa os itens na página
+    { categoria: "Procedimentos", titulo: "Manual de cobrança",          descricao: "Passo a passo do fluxo de cobrança.",       link: "#" },
+    { categoria: "Procedimentos", titulo: "Roteiro de negociação",       descricao: "Script e boas práticas de negociação.",     link: "#" },
+    { categoria: "Procedimentos", titulo: "Baixa de títulos",            descricao: "Como registrar pagamentos e baixas.",      link: "#" },
+    { categoria: "Treinamentos",  titulo: "Integração de novos agentes", descricao: "Trilha de treinamento inicial.",           link: "#" },
+    { categoria: "Treinamentos",  titulo: "Atendimento de excelência",   descricao: "Apresentação do treinamento de qualidade.", link: "#" },
+    { categoria: "Modelos",       titulo: "Modelos de e-mail",           descricao: "Textos padrão para envio aos clientes.",   link: "#" }
+  ],
+  plataformas: [
+    { titulo: "ERP",                descricao: "Sistema de gestão financeira.",        link: "#" },
+    { titulo: "CRM",                descricao: "Histórico de contatos com clientes.",  link: "#" },
+    { titulo: "Portal do banco",    descricao: "Consulta de boletos e remessas.",      link: "#" },
+    { titulo: "Central de tickets", descricao: "Abertura e acompanhamento de chamados.", link: "#" }
+  ],
+  planilhas: [
+    { titulo: "Controle de inadimplência", descricao: "Acompanhamento diário dos títulos vencidos.", link: "#" },
+    { titulo: "Acordos firmados",          descricao: "Registro dos acordos e parcelamentos.",       link: "#" },
+    { titulo: "Escala da equipe",          descricao: "Escala de trabalho e folgas.",                link: "#" },
+    { titulo: "Indicadores do setor",      descricao: "Base dos indicadores de qualidade.",          link: "#" }
+  ],
+
+  /* ---------- COMUNICAÇÃO INTERNA ---------- */
+  comunicacaoIntro: "Conheça o time, acompanhe a agenda do setor e consulte as regras de comissionamento.",
+  quemSomos: {
+    texto: [
+      "O setor de Contas a Receber é responsável por garantir o recebimento dos valores devidos à empresa, mantendo um relacionamento próximo e respeitoso com os clientes.",
+      "Troque este texto pela apresentação real do setor: história, missão e como o time trabalha."
+    ],
+    missao: "Descreva aqui a missão do setor.",
+    valores: [
+      { nome: "Respeito",      texto: "Tratamos cada cliente com cordialidade e empatia." },
+      { nome: "Transparência", texto: "Informações claras em todas as negociações." },
+      { nome: "Resultado",     texto: "Compromisso com metas e com a saúde financeira." },
+      { nome: "Colaboração",   texto: "Crescemos juntos, compartilhando conhecimento." }
+    ],
+    equipe: [
+      // exemplo
+      { nome: "Nome da liderança", cargo: "Coordenação" },
+      { nome: "Nome", cargo: "Analista" },
+      { nome: "Nome", cargo: "Agente de cobrança" },
+      { nome: "Nome", cargo: "Agente de cobrança" }
+    ]
+  },
+  agenda: [
+    // exemplo — data no formato AAAA-MM-DD
+    { data: "2026-10-16", titulo: "Reunião de resultados do mês",  local: "Sala de reuniões / Meet", hora: "10:00" },
+    { data: "2026-10-23", titulo: "Treinamento de negociação",     local: "Online",                  hora: "14:00" },
+    { data: "2026-10-30", titulo: "Café com aniversariantes",      local: "Copa",                    hora: "16:00" },
+    { data: "2026-11-06", titulo: "Alinhamento de metas",          local: "Sala de reuniões",        hora: "09:30" }
+  ],
+  comissionamento: {
+    intro: "As regras abaixo são um modelo de formato. Substitua pelos critérios oficiais aprovados pela empresa.",
+    criterios: [
+      "A comissão é apurada mensalmente, com base nos valores efetivamente recebidos.",
+      "Só entram no cálculo os títulos negociados e pagos dentro do mês de apuração.",
+      "É necessário atingir o índice mínimo de qualidade para ter direito à comissão."
+    ],
+    faixas: [
+      { faixa: "Até 80% da meta",   percentual: "0%",   obs: "Sem comissão" },
+      { faixa: "80% a 99% da meta", percentual: "1,0%", obs: "Sobre o valor recuperado" },
+      { faixa: "100% a 119%",       percentual: "1,5%", obs: "Sobre o valor recuperado" },
+      { faixa: "120% ou mais",      percentual: "2,0%", obs: "Sobre o valor recuperado" }
+    ],
+    observacoes: "Dúvidas sobre o cálculo devem ser enviadas à coordenação até o 5º dia útil do mês seguinte.",
+    documento: "#"
+  },
+
+  /* ---------- RODAPÉ ---------- */
+  endereco: "Agility Soluções\nRua Exemplo, 123 — Bairro\nCidade — UF, 00000-000",
+  politicas: [
+    { titulo: "Política de privacidade (LGPD)", link: "#" },
+    { titulo: "Código de conduta",              link: "#" },
+    { titulo: "Política de segurança da informação", link: "#" }
+  ],
+  linksUteis: [
+    { titulo: "Painel de Atendimento", link: "#" },
+    { titulo: "Deixe sua opinião",     link: "FORM" },
+    { titulo: "Portal do colaborador", link: "#" }
+  ]
+};
+</script>
+
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="logo.png" alt="Agility Soluções" onerror="this.onerror=null;this.style.display='none';this.insertAdjacentHTML('afterend','<div style=&quot;color:#fff;font-family:Sora,sans-serif;font-weight:800;font-size:16px;letter-spacing:.03em;&quot;>AGILITY<br><span style=&quot;color:#FF7029;font-size:11px;font-weight:600;letter-spacing:.08em;&quot;>SOLUÇÕES</span></div>')">
+      <div class="sub" id="setorNome"></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-footer" id="sideFooter"></div>
+  </aside>
+  <div class="overlay" id="overlay"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Abrir menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <span class="chevron">›</span>
+      <h1 id="pageTitle">Home</h1>
+      <span class="breadcrumb" id="breadcrumb"></span>
+    </header>
+    <main class="content" id="content"></main>
+    <footer class="footer" id="footer"></footer>
+  </div>
+</div>
+
+<script>
+(function(){
+const C = CONTEUDO;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const hoje = new Date();
+const formLink = l => l === "FORM" ? C.formOpiniao : l;
+const iniciais = n => n.split(/\s+/).filter(Boolean).slice(0,2).map(p => p[0]).join("").toUpperCase();
+const fmtData = iso => { const [y,m,d] = iso.split("-").map(Number); return `${String(d).padStart(2,"0")} de ${MESES[m-1]} de ${y}`; };
+const mesLabel = ym => { const [y,m] = ym.split("-").map(Number); return `${MESES[m-1][0].toUpperCase()+MESES[m-1].slice(1)}/${y}`; };
+const ext = l => /^https?:/.test(l) ? ' target="_blank" rel="noopener"' : "";
+
+/* ---------- ÍCONES ---------- */
+const I = {
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
+  page:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/></svg>',
+  chev:'<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>',
+  book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>',
+  monitor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+  sheet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-5-6.7"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>',
+  coin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .8-3 2s1.3 1.7 3 2 3 .8 3 2-1.3 2-3 2c-1.4 0-2.5-.5-3-1.5M12 6v2M12 16v2"/></svg>',
+  cake:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V12a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v9M2 21h20M4 16c2 0 2 1.5 4 1.5s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5M12 11V7M12 4.5a1 1 0 0 1 0-1"/></svg>',
+  star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg>',
+  news:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13v16H6a2 2 0 0 1-2-2z"/><path d="M17 8h3v10a2 2 0 0 1-2 2M8 8h5M8 12h5M8 16h3"/></svg>',
+  chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M8 17v-5M13 17V8M18 17v-8"/></svg>',
+  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z"/></svg>',
+  ribbon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-2.2 0-4 1.8-4 4 0 2.5 2 5 4 7.5 2-2.5 4-5 4-7.5 0-2.2-1.8-4-4-4z"/><path d="M10 12 5 21l3-1 1.5 2.5L12 15M14 12l5 9-3-1-1.5 2.5L12 15"/></svg>',
+  ext:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>'
+};
+
+/* ---------- ESTRUTURA (igual ao Google Sites) ---------- */
+const PAGINAS = [
+  { id:"home", titulo:"Home", icone:"home" },
+  { id:"central", titulo:"Central de Trabalho", icone:"page", filhos:[
+    { id:"material", titulo:"Material de Apoio" },
+    { id:"plataformas", titulo:"Plataformas" },
+    { id:"planilhas", titulo:"Planilhas" }
+  ]},
+  { id:"comunicacao", titulo:"Comunicação Interna", icone:"page", filhos:[
+    { id:"quem-somos", titulo:"Quem somos" },
+    { id:"agenda", titulo:"Agenda" },
+    { id:"comissionamento", titulo:"Regra de Comissionamento" }
+  ]}
+];
+const pai = {}; const titulo = {};
+PAGINAS.forEach(p => { titulo[p.id] = p.titulo; (p.filhos||[]).forEach(f => { pai[f.id] = p; titulo[f.id] = f.titulo; }); });
+const abertos = new Set(["central","comunicacao"]);
+
+function renderNav(atual){
+  $("#nav").innerHTML = PAGINAS.map(p => {
+    const temFilhos = !!p.filhos;
+    const aberto = abertos.has(p.id);
+    let h = `<a href="#${p.id}" class="nav-item${atual===p.id?" active":""}">`;
+    if (temFilhos) h += `<button class="nav-toggle${aberto?"":" closed"}" data-toggle="${p.id}" aria-label="Expandir">${I.chev}</button>`;
+    h += `${I[p.icone]}<span>${esc(p.titulo)}</span></a>`;
+    if (temFilhos) h += `<div class="nav-children${aberto?"":" hidden"}">` +
+      p.filhos.map(f => `<a href="#${f.id}" class="nav-item${atual===f.id?" active":""}">${I.page}<span>${esc(f.titulo)}</span></a>`).join("") + `</div>`;
+    return h;
+  }).join("");
+}
+$("#nav").addEventListener("click", e => {
+  const t = e.target.closest("[data-toggle]");
+  if (!t) return;
+  e.preventDefault(); e.stopPropagation();
+  const id = t.dataset.toggle;
+  abertos.has(id) ? abertos.delete(id) : abertos.add(id);
+  renderNav(rotaAtual());
+});
+
+/* ---------- CAMPANHA DO MÊS ---------- */
+const camp = C.campanhas[hoje.getMonth()+1];
+if (camp){
+  document.documentElement.style.setProperty("--campanha", camp.cor);
+  document.documentElement.style.setProperty("--campanha-light", camp.cor + "22");
+}
+
+/* ---------- HOME ---------- */
+function fraseDoDia(){
+  const inicio = new Date(hoje.getFullYear(),0,0);
+  const diaAno = Math.floor((hoje - inicio) / 864e5);
+  return C.frases[diaAno % C.frases.length];
+}
+function saudacao(){ const h = hoje.getHours(); return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"; }
+
+function cardTitulo(ic, t){ return `<h3><span class="ico">${I[ic]}</span>${esc(t)}</h3>`; }
+
+function pageHome(){
+  const f = fraseDoDia();
+  const mesAtual = hoje.getMonth()+1;
+  const anivs = C.aniversariantes.filter(a => a.mes === mesAtual).sort((a,b) => a.dia - b.dia);
+  const ymAtual = `${hoje.getFullYear()}-${String(mesAtual).padStart(2,"0")}`;
+  let recs = C.reconhecimentos.filter(r => r.mes === ymAtual);
+  let recMes = ymAtual;
+  if (!recs.length && C.reconhecimentos.length){
+    recMes = C.reconhecimentos.map(r => r.mes).sort().pop();
+    recs = C.reconhecimentos.filter(r => r.mes === recMes);
+  }
+  const noticias = [...C.noticias].sort((a,b) => b.data.localeCompare(a.data)).slice(0,4);
+
+  return `
+  <div class="grid grid-home">
+    <section class="hero span-12">
+      <div class="hello">${saudacao()}! Hoje é ${hoje.getDate()} de ${MESES[hoje.getMonth()]}.</div>
+      <h2>Bem-vindo(a) ao portal de ${esc(C.setor)}</h2>
+      <div class="frase-label">Frase do dia</div>
+      <div class="frase">“${esc(f.texto)}”</div>
+      <div class="frase-autor">— ${esc(f.autor)}</div>
+    </section>
+
+    ${camp ? `
+    <section class="card campanha span-8">
+      <div class="campanha-head">
+        <div class="laco">${I.ribbon}</div>
+        <div><div class="muted" style="font-size:12px;font-weight:600">Campanha do mês</div><h4>${esc(camp.nome)}</h4></div>
+      </div>
+      <div style="font-weight:600;margin-bottom:4px">${esc(camp.tema)}</div>
+      <div class="muted">${esc(camp.texto)}</div>
+    </section>` : ""}
+
+    <section class="card opiniao span-4">
+      ${cardTitulo("chat","Deixe sua opinião")}
+      <p>Sugestões, elogios ou críticas? Sua opinião ajuda a melhorar o setor.</p>
+      <a class="btn orange" href="${esc(C.formOpiniao)}" target="_blank" rel="noopener">Responder formulário ${I.ext}</a>
+    </section>
+
+    <section class="card span-12" id="indicadores">
+      <div class="ind-head">
+        ${cardTitulo("chart","Indicadores de qualidade")}
+        <div class="filters">
+          <select class="select" id="indMes" aria-label="Mês"></select>
+          <select class="select" id="indMetrica" aria-label="Indicador">
+            <option value="satisfacao">Satisfação (%)</option>
+            <option value="resolucao">Resolução (%)</option>
+            <option value="tma">TMA (min)</option>
+            <option value="atendimentos">Atendimentos</option>
+          </select>
+        </div>
+      </div>
+      <div id="indConteudo"><div class="empty">Carregando indicadores…</div></div>
+    </section>
+
+    <section class="card span-4">
+      ${cardTitulo("cake",`Aniversariantes de ${MESES[hoje.getMonth()]}`)}
+      ${anivs.length ? `<ul class="list">${anivs.map(a => `
+        <li class="${a.dia===hoje.getDate()?"hoje":""}">
+          <div class="avatar orange">${esc(iniciais(a.nome))}</div>
+          <div><div class="t">${esc(a.nome)}${a.dia===hoje.getDate()?" 🎉":""}</div><div class="s">${esc(a.area)}</div></div>
+          <div class="dia">${String(a.dia).padStart(2,"0")}/${String(a.mes).padStart(2,"0")}</div>
+        </li>`).join("")}</ul>` : `<div class="empty">Nenhum aniversariante este mês.</div>`}
+    </section>
+
+    <section class="card span-4">
+      ${cardTitulo("star",`Reconhecimentos — ${recs.length ? mesLabel(recMes) : "do mês"}`)}
+      ${recs.length ? `<ul class="list">${recs.map(r => `
+        <li>
+          <div class="avatar">${esc(iniciais(r.nome))}</div>
+          <div><div class="t">${esc(r.nome)}</div><span class="tag orange">${esc(r.titulo)}</span><div class="s" style="margin-top:4px">${esc(r.motivo)}</div></div>
+        </li>`).join("")}</ul>` : `<div class="empty">Nenhum reconhecimento cadastrado.</div>`}
+    </section>
+
+    <section class="card span-4">
+      ${cardTitulo("news","Últimas notícias")}
+      ${noticias.length ? noticias.map(n => `
+        <a class="noticia" href="${esc(n.link)}"${ext(n.link)}>
+          <div class="d">${fmtData(n.data)}</div>
+          <div class="t">${esc(n.titulo)}</div>
+          <div class="r">${esc(n.resumo)}</div>
+        </a>`).join("") : `<div class="empty">Sem notícias no momento.</div>`}
+    </section>
+  </div>`;
+}
+
+/* ---------- INDICADORES ---------- */
+let dadosInd = null, grafico = null;
+async function carregarIndicadores(){
+  if (dadosInd) return dadosInd;
+  if (C.indicadoresCsv && window.Papa){
+    try{
+      const txt = await (await fetch(C.indicadoresCsv)).text();
+      const r = Papa.parse(txt, { header:true, skipEmptyLines:true });
+      const num = v => parseFloat(String(v ?? "").replace("%","").replace(",", "."));
+      dadosInd = r.data.map(l => {
+        const o = {}; Object.keys(l).forEach(k => o[k.trim().toLowerCase()] = l[k]);
+        return { mes:String(o.mes||"").trim(), agente:String(o.agente||"").trim(), atendimentos:num(o.atendimentos),
+                 satisfacao:num(o.satisfacao), resolucao:num(o.resolucao), tma:num(o.tma) };
+      }).filter(d => d.mes && d.agente);
+      if (dadosInd.length) return dadosInd;
+    }catch(e){ console.warn("Falha ao carregar CSV de indicadores", e); }
+  }
+  dadosInd = C.indicadores;
+  return dadosInd;
+}
+function okMeta(k, v){
+  const m = C.metas[k]; if (m == null || isNaN(v)) return "";
+  return (k === "tma" ? v <= m : v >= m) ? "meta-ok" : "meta-no";
+}
+const fmtN = (v, d=0) => isNaN(v) ? "—" : v.toLocaleString("pt-BR", { minimumFractionDigits:d, maximumFractionDigits:d });
+
+async function montarIndicadores(){
+  const dados = await carregarIndicadores();
+  const box = $("#indConteudo"); if (!box) return;
+  if (!dados.length){ box.innerHTML = `<div class="empty">Nenhum indicador cadastrado.</div>`; return; }
+  const meses = [...new Set(dados.map(d => d.mes))].sort().reverse();
+  const selMes = $("#indMes"), selMet = $("#indMetrica");
+  selMes.innerHTML = meses.map(m => `<option value="${esc(m)}">${esc(mesLabel(m))}</option>`).join("");
+  const desenhar = () => {
+    const mes = selMes.value, met = selMet.value;
+    const linhas = dados.filter(d => d.mes === mes).sort((a,b) => a.agente.localeCompare(b.agente,"pt-BR"));
+    const tot = linhas.reduce((s,d) => s + (d.atendimentos||0), 0);
+    const media = k => { const p = linhas.filter(d => !isNaN(d[k]) && d.atendimentos); const w = p.reduce((s,d)=>s+d.atendimentos,0); return w ? p.reduce((s,d)=>s+d[k]*d.atendimentos,0)/w : NaN; };
+    const ms = media("satisfacao"), mr = media("resolucao"), mt = media("tma");
+    box.innerHTML = `
+      <div class="kpis">
+        <div class="kpi"><div class="l">Atendimentos</div><div class="v">${fmtN(tot)}</div></div>
+        <div class="kpi"><div class="l">Satisfação média</div><div class="v ${okMeta("satisfacao",ms)}">${fmtN(ms,1)}%</div></div>
+        <div class="kpi"><div class="l">Resolução média</div><div class="v ${okMeta("resolucao",mr)}">${fmtN(mr,1)}%</div></div>
+        <div class="kpi"><div class="l">TMA médio</div><div class="v ${okMeta("tma",mt)}">${fmtN(mt,1)} min</div></div>
+      </div>
+      <div class="ind-body">
+        <div class="chart-box"><canvas id="indChart"></canvas></div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>Agente</th><th class="n">Atend.</th><th class="n">Satisf.</th><th class="n">Resol.</th><th class="n">TMA</th></tr></thead>
+          <tbody>${linhas.map(d => `<tr>
+            <td>${esc(d.agente)}</td>
+            <td class="n">${fmtN(d.atendimentos)}</td>
+            <td class="n ${okMeta("satisfacao",d.satisfacao)}">${fmtN(d.satisfacao,1)}%</td>
+            <td class="n ${okMeta("resolucao",d.resolucao)}">${fmtN(d.resolucao,1)}%</td>
+            <td class="n ${okMeta("tma",d.tma)}">${fmtN(d.tma,1)}</td></tr>`).join("")}</tbody>
+        </table>
+        <div class="exemplo">Metas: satisfação ≥ ${C.metas.satisfacao}% · resolução ≥ ${C.metas.resolucao}% · TMA ≤ ${C.metas.tma} min. Verde = dentro da meta.</div>
+        ${C.indicadoresCsv ? "" : `<div class="exemplo">Dados de exemplo — conecte a planilha em <code>indicadoresCsv</code>.</div>`}
+        </div>
+      </div>`;
+    if (!window.Chart){ $(".chart-box").style.display = "none"; return; }
+    if (grafico) grafico.destroy();
+    const meta = C.metas[met];
+    grafico = new Chart($("#indChart"), {
+      type:"bar",
+      data:{ labels: linhas.map(d => d.agente), datasets:[{
+        data: linhas.map(d => d[met]),
+        backgroundColor: linhas.map(d => meta == null ? "#7063F0" : (okMeta(met,d[met]) === "meta-ok" ? "#7063F0" : "#FF7029")),
+        borderRadius:6, maxBarThickness:42
+      }]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => " " + fmtN(c.parsed.y, met==="atendimentos"?0:1) + (met==="tma"?" min":met==="atendimentos"?"":"%") } } },
+        scales:{ y:{ beginAtZero: met !== "satisfacao" && met !== "resolucao", grid:{color:"#EEF0F5"}, ticks:{font:{size:11}} }, x:{ grid:{display:false}, ticks:{font:{size:11}} } }
+      }
+    });
+  };
+  selMes.onchange = desenhar; selMet.onchange = desenhar;
+  desenhar();
+}
+
+/* ---------- CENTRAL DE TRABALHO ---------- */
+function tiles(lista, icone){
+  if (!lista.length) return `<div class="empty">Nenhum item cadastrado.</div>`;
+  return `<div class="tiles">${lista.map(i => `
+    <a class="tile" href="${esc(i.link)}"${ext(i.link)}>
+      <div class="ti">${I[icone]}</div>
+      <div class="tt">${esc(i.titulo)}</div>
+      <div class="td">${esc(i.descricao||"")}</div>
+      <div class="tc">Abrir ›</div>
+    </a>`).join("")}</div>`;
+}
+function intro(t, txt){ return `<div class="page-intro"><h2 style="font-size:20px">${esc(t)}</h2>${txt?`<p>${esc(txt)}</p>`:""}</div>`; }
+
+function pageCentral(){
+  const secoes = [
+    { id:"material", t:"Material de Apoio", ic:"book", d:"Manuais, procedimentos, treinamentos e modelos.", n:C.materialApoio.length },
+    { id:"plataformas", t:"Plataformas", ic:"monitor", d:"Acesso rápido aos sistemas usados no setor.", n:C.plataformas.length },
+    { id:"planilhas", t:"Planilhas", ic:"sheet", d:"Planilhas de controle e acompanhamento.", n:C.planilhas.length }
+  ];
+  return intro("Central de Trabalho", C.centralIntro) + tiles(secoes.map(s => ({ titulo:s.t, descricao:`${s.d} (${s.n} ${s.n===1?"item":"itens"})`, link:"#"+s.id })), "page")
+    + `<div class="section-title" style="margin-top:28px">Acesso rápido às plataformas</div>` + tiles(C.plataformas, "monitor");
+}
+function pageMaterial(){
+  const cats = [...new Set(C.materialApoio.map(m => m.categoria || "Geral"))];
+  return intro("Material de Apoio", "Documentos e materiais de consulta para o dia a dia.") +
+    (cats.length ? cats.map(c => `<div class="section-title">${esc(c)}</div>` + tiles(C.materialApoio.filter(m => (m.categoria||"Geral") === c), "book")).join("") : `<div class="empty">Nenhum material cadastrado.</div>`);
+}
+function pagePlataformas(){ return intro("Plataformas", "Links de acesso aos sistemas utilizados pelo setor.") + tiles(C.plataformas, "monitor"); }
+function pagePlanilhas(){ return intro("Planilhas", "Planilhas de controle e acompanhamento do setor.") + tiles(C.planilhas, "sheet"); }
+
+/* ---------- COMUNICAÇÃO INTERNA ---------- */
+function pageComunicacao(){
+  const proximos = C.agenda.filter(e => e.data >= isoHoje()).sort((a,b) => a.data.localeCompare(b.data)).slice(0,3);
+  return intro("Comunicação Interna", C.comunicacaoIntro) +
+    tiles([
+      { titulo:"Quem somos", descricao:"Conheça o setor, a missão, os valores e o time.", link:"#quem-somos" },
+      { titulo:"Agenda", descricao:"Reuniões, treinamentos e eventos do setor.", link:"#agenda" },
+      { titulo:"Regra de Comissionamento", descricao:"Critérios e faixas de comissão.", link:"#comissionamento" }
+    ], "users") +
+    `<div class="section-title" style="margin-top:28px">Próximos eventos</div>
+     <div class="card">${proximos.length ? proximos.map(eventoHtml).join("") : `<div class="empty">Nenhum evento agendado.</div>`}</div>`;
+}
+function pageQuemSomos(){
+  const q = C.quemSomos;
+  return `<div class="prose">${intro("Quem somos")}
+    ${q.texto.map(p => `<p>${esc(p)}</p>`).join("")}
+    ${q.missao ? `<h3>Missão</h3><p>${esc(q.missao)}</p>` : ""}
+    ${q.valores.length ? `<h3>Valores</h3><div class="valores">${q.valores.map(v => `<div class="valor"><b>${esc(v.nome)}</b>${esc(v.texto)}</div>`).join("")}</div>` : ""}
+    </div>
+    ${q.equipe.length ? `<div class="section-title" style="margin-top:28px">Nosso time</div>
+    <div class="equipe">${q.equipe.map(m => `<div class="membro"><div class="avatar">${esc(iniciais(m.nome))}</div><div><div style="font-weight:600">${esc(m.nome)}</div><div class="muted" style="font-size:12.5px">${esc(m.cargo)}</div></div></div>`).join("")}</div>` : ""}`;
+}
+function isoHoje(){ return `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`; }
+function eventoHtml(e){
+  const [y,m,d] = e.data.split("-").map(Number);
+  return `<div class="evento${e.data < isoHoje() ? " passado" : ""}">
+    <div class="data"><b>${String(d).padStart(2,"0")}</b><span>${MESES[m-1].slice(0,3)}</span></div>
+    <div><div style="font-weight:600">${esc(e.titulo)}</div><div class="muted" style="font-size:12.5px">${esc(e.hora||"")}${e.hora&&e.local?" · ":""}${esc(e.local||"")}</div></div>
+  </div>`;
+}
+function pageAgenda(){
+  const ev = [...C.agenda].sort((a,b) => a.data.localeCompare(b.data));
+  const prox = ev.filter(e => e.data >= isoHoje()), pass = ev.filter(e => e.data < isoHoje()).reverse();
+  return intro("Agenda", "Reuniões, treinamentos e eventos do setor.") +
+    `<div class="section-title">Próximos</div><div class="card">${prox.length ? prox.map(eventoHtml).join("") : `<div class="empty">Nenhum evento agendado.</div>`}</div>` +
+    (pass.length ? `<div class="section-title">Realizados</div><div class="card">${pass.map(eventoHtml).join("")}</div>` : "");
+}
+function pageComissionamento(){
+  const c = C.comissionamento;
+  return `<div class="prose">${intro("Regra de Comissionamento")}
+    ${c.intro ? `<div class="callout">${esc(c.intro)}</div>` : ""}
+    <h3>Critérios</h3><ul>${c.criterios.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+    <h3>Faixas</h3>
+    <div class="card" style="padding:0;overflow-x:auto"><table class="tbl faixas">
+      <thead><tr><th>Atingimento</th><th>Comissão</th><th>Observação</th></tr></thead>
+      <tbody>${c.faixas.map(f => `<tr><td>${esc(f.faixa)}</td><td><b>${esc(f.percentual)}</b></td><td class="muted">${esc(f.obs)}</td></tr>`).join("")}</tbody>
+    </table></div>
+    ${c.observacoes ? `<h3>Observações</h3><p>${esc(c.observacoes)}</p>` : ""}
+    ${c.documento && c.documento !== "#" ? `<p><a class="btn ghost" href="${esc(c.documento)}"${ext(c.documento)}>Ver documento oficial ${I.ext}</a></p>` : ""}
+  </div>`;
+}
+
+/* ---------- RODAPÉ ---------- */
+function renderFooter(){
+  const lista = arr => `<ul>${arr.map(l => { const h = formLink(l.link); return `<li><a href="${esc(h)}"${ext(h)}>${esc(l.titulo)}</a></li>`; }).join("")}</ul>`;
+  $("#footer").innerHTML = `<div class="footer-grid">
+      <div><h4>Endereço</h4><div class="addr">${esc(C.endereco)}</div></div>
+      <div><h4>Políticas</h4>${lista(C.politicas)}</div>
+      <div><h4>Links úteis</h4>${lista(C.linksUteis)}</div>
+    </div>
+    <div class="copy">© ${hoje.getFullYear()} Agility Soluções · ${esc(C.setor)}</div>`;
+}
+
+/* ---------- ROTEAMENTO ---------- */
+const RENDER = { home:pageHome, central:pageCentral, material:pageMaterial, plataformas:pagePlataformas, planilhas:pagePlanilhas,
+  comunicacao:pageComunicacao, "quem-somos":pageQuemSomos, agenda:pageAgenda, comissionamento:pageComissionamento };
+function rotaAtual(){ const r = location.hash.slice(1); return RENDER[r] ? r : "home"; }
+function navegar(){
+  const r = rotaAtual();
+  if (pai[r]) abertos.add(pai[r].id);
+  renderNav(r);
+  $("#pageTitle").textContent = titulo[r];
+  $("#breadcrumb").textContent = pai[r] ? `${pai[r].titulo} › ${titulo[r]}` : (r === "home" ? "" : titulo[r]);
+  document.title = `${titulo[r]} — ${C.setor} | Agility`;
+  $("#content").innerHTML = RENDER[r]();
+  if (r === "home") montarIndicadores();
+  fecharMenu();
+  window.scrollTo(0,0);
+}
+
+/* menu mobile */
+const fecharMenu = () => { $("#sidebar").classList.remove("open"); $("#overlay").classList.remove("show"); };
+$("#menuBtn").onclick = () => { $("#sidebar").classList.add("open"); $("#overlay").classList.add("show"); };
+$("#overlay").onclick = fecharMenu;
+
+$("#setorNome").textContent = C.setor;
+$("#sideFooter").textContent = camp ? camp.nome : "";
+renderFooter();
+window.addEventListener("hashchange", navegar);
+navegar();
+})();
+</script>
+</body>
+</html>

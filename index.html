@@ -223,6 +223,17 @@ table{border-collapse:collapse;width:100%;}
 .tbl .ramal{font-family:'Sora',sans-serif;font-weight:700;color:var(--purple-deep);font-variant-numeric:tabular-nums;}
 .tbl .mail a{display:block;}
 
+/* agenda */
+.evento{display:flex;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
+.evento:last-child{border-bottom:0;}
+.evento .data{width:56px;flex:none;text-align:center;background:var(--purple-light);border-radius:10px;padding:6px 0;color:var(--purple-deep);}
+.evento .data b{display:block;font-family:'Sora',sans-serif;font-size:20px;line-height:1.1;}
+.evento .data span{font-size:11px;text-transform:uppercase;font-weight:600;}
+.evento.passado{opacity:.55;}
+.escala tr.prox td{background:var(--orange-light);}
+.escala tr.passado td{opacity:.5;}
+.escala td{white-space:nowrap;}
+
 /* comissionamento */
 .callout{background:var(--purple-light);border-radius:12px;padding:14px 16px;color:var(--purple-deep);font-size:13px;margin:12px 0;}
 .valor{font-family:'Sora',sans-serif;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;}
@@ -316,11 +327,58 @@ const CONTEUDO = {
   },
 
   /* ---------- CENTRAL DE TRABALHO ---------- */
+  // "categoria" agrupa os itens na página
   materialApoio: [
-    { titulo: "Material de Apoio — Cliente Pessoa Jurídica", descricao: "Bloqueio e desbloqueio, comunicação dos rastreadores, localização, histórico de trajeto, cancelamento e informações financeiras.", link: "docs/material-de-apoio-cliente-pj.pdf", tipo: "PDF" },
-    { titulo: "Contrato de Prestação de Serviços — Pessoa Física", descricao: "Contrato de monitoramento e rastreamento veicular e locação de equipamento.", link: "docs/contrato-pessoa-fisica.pdf", tipo: "PDF" },
-    { titulo: "Código de Defesa do Consumidor", descricao: "Lei nº 8.078/1990, texto oficial e atualizado no site do Planalto.", link: "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm", tipo: "Site" }
+    { categoria: "Treinamento e procedimentos", titulo: "Apostila de Treinamento — Contas a Receber", descricao: "Conceitos, canais de atendimento, scripts, negociação, faturas e sistemas do setor.", link: "docs/apostila-contas-a-receber.pdf", tipo: "PDF" },
+    { categoria: "Treinamento e procedimentos", titulo: "Manual de Contas a Receber", descricao: "Estrutura do setor e diretrizes de recuperação de crédito.", link: "docs/manual-contas-a-receber.pdf", tipo: "PDF" },
+    { categoria: "Treinamento e procedimentos", titulo: "POP — Procedimento Operacional Padrão", descricao: "Faturamento, cobrança, negociação, retenção e cancelamento, com fluxogramas.", link: "docs/pop-contas-a-receber.pdf", tipo: "PDF" },
+    { categoria: "Treinamento e procedimentos", titulo: "Material de Apoio — Cliente Pessoa Jurídica", descricao: "Bloqueio e desbloqueio, comunicação dos rastreadores, localização, histórico de trajeto, cancelamento e informações financeiras.", link: "docs/material-de-apoio-cliente-pj.pdf", tipo: "PDF" },
+    { categoria: "Atendimento", titulo: "Scripts de Atendimento", descricao: "Roteiros para telefonia ativa e receptiva e para o chat.", link: "docs/scripts-de-atendimento.pdf", tipo: "PDF" },
+    { categoria: "Atendimento", titulo: "Modelo de E-mails", descricao: "Textos padrão: negativação, regularização, aviso de dívida, boletos e mais.", link: "https://docs.google.com/document/d/1CTXcHwBwBGQZo3jJhDXg65FiqXXVC5P30PRQSPAtLa0/edit?tab=t.0", tipo: "Documento" },
+    { categoria: "Atendimento", titulo: "Política de Qualidade de Atendimento", descricao: "Diretrizes de monitoria e avaliação, atributos e pesos.", link: "docs/politica-de-qualidade-de-atendimento.pdf", tipo: "PDF" },
+    { categoria: "Contratos e legislação", titulo: "Contrato de Prestação de Serviços — Pessoa Física", descricao: "Contrato de monitoramento e rastreamento veicular e locação de equipamento.", link: "docs/contrato-pessoa-fisica.pdf", tipo: "PDF" },
+    { categoria: "Contratos e legislação", titulo: "Código de Defesa do Consumidor", descricao: "Lei nº 8.078/1990, texto oficial e atualizado no site do Planalto.", link: "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm", tipo: "Site" }
   ],
+
+  plataformas: [
+    { titulo: "Gestor",     descricao: "Chamados, protocolos e tickets de atendimento.", link: "https://gestor.agilitymonitoramento.com.br/" },
+    { titulo: "Central",    descricao: "Agility Central: administração de clientes.", link: "https://central.agility.com.br/" },
+    { titulo: "SSX",        descricao: "Rastreamento e comunicação dos rastreadores.", link: "https://tracking.systemsatx.com.br/?h=8026020718176023626" },
+    { titulo: "Ticket",     descricao: "Freshdesk: abertura e acompanhamento de tickets.", link: "https://agilitymonitoramento.freshdesk.com/support/login" },
+    { titulo: "G4Flex",     descricao: "Telefonia e atendimento.", link: "https://agility.g4flex.com.br:9090/" },
+    { titulo: "AgilityLog", descricao: "Acesso ao AgilityLog.", link: "https://log.agilitymonitoramento.com.br/" },
+    { titulo: "SPC",        descricao: "SPC Brasil: consulta e negativação.", link: "https://login.spcbrasil.com.br/realms/associado/login-actions/authenticate?execution=391f6bd4-1222-44a8-9de3-b3d217cf0c6d&client_id=spcjava&tab_id=QZLox0giZKI&client_data=eyJydSI6Imh0dHBzOi8vc2lzdGVtYS5zcGMub3JnLmJyL3NwYy9vcGVuaWRfY29ubmVjdF9sb2dpbjtqc2Vzc2lvbmlkPWU0NTFiNzcxLWRkNmYtNGQyMi05ZDFiLTQ2YjYyYWQzNDczNF9ub2RleDUyIiwicnQiOiJjb2RlIiwic3QiOiIxMTdiMjgwNTBhYzc2In0" },
+    { titulo: "Pontotel",   descricao: "Registro de ponto.", link: "https://bateponto.pontotel.com.br/#/login" },
+    { titulo: "Sankhya",    descricao: "Sistema de gestão Sankhya.", link: "https://agilitygestao.sankhyacloud.com.br/mge/login.jsp" }
+  ],
+
+  /* ---------- AGENDA ---------- */
+  // data no formato AAAA-MM-DD
+  eventos: [
+    { data: "2026-11-09", titulo: "Feedback geral" },
+    { data: "2026-11-16", titulo: "Feedback individual" },
+    { data: "2026-11-17", titulo: "Feedback individual" },
+    { data: "2026-12-14", titulo: "Feedback geral" },
+    { data: "2026-12-16", titulo: "Feedback individual" },
+    { data: "2026-12-17", titulo: "Feedback individual" }
+  ],
+  escalaSabados: {
+    titulo: "Escala de sábados — 17/10 a 26/12/2026",
+    duplas: "Duplas: Erick + Vitória | Luiz + Evilene (revezando a cada sábado)",
+    linhas: [
+      { data: "2026-10-17", trabalham: "Erick (só)",      folgam: "Luiz e Evilene",  obs: "Vitória de férias" },
+      { data: "2026-10-24", trabalham: "Luiz e Evilene",  folgam: "Erick e Vitória", obs: "Vitória de férias (já seria folga)" },
+      { data: "2026-10-31", trabalham: "Erick e Vitória", folgam: "Luiz e Evilene",  obs: "Vitória retorna em 28/10" },
+      { data: "2026-11-07", trabalham: "Luiz e Evilene",  folgam: "Erick e Vitória", obs: "" },
+      { data: "2026-11-14", trabalham: "Erick e Vitória", folgam: "Luiz e Evilene",  obs: "" },
+      { data: "2026-11-21", trabalham: "Luiz (só)",       folgam: "Erick e Vitória", obs: "Evilene de férias" },
+      { data: "2026-11-28", trabalham: "Erick e Vitória", folgam: "Luiz e Evilene",  obs: "" },
+      { data: "2026-12-05", trabalham: "Luiz (só)",       folgam: "Erick e Vitória", obs: "Evilene de férias" },
+      { data: "2026-12-12", trabalham: "Erick e Vitória", folgam: "Luiz e Evilene",  obs: "" },
+      { data: "2026-12-19", trabalham: "Luiz e Evilene",  folgam: "Erick e Vitória", obs: "Evilene retorna em 16/12" },
+      { data: "2026-12-26", trabalham: "Erick e Vitória", folgam: "Luiz e Evilene",  obs: "" }
+    ]
+  },
 
   /* ---------- COMUNICAÇÃO INTERNA ---------- */
   clubeDescontos: "docs/clube-de-descontos.pdf",
@@ -407,8 +465,7 @@ const PAGINAS = [
   { id:"home", titulo:"Home", icone:"home" },
   { id:"central", titulo:"Central de Trabalho", icone:"page", filhos:[
     { id:"material", titulo:"Material de Apoio" },
-    { id:"plataformas", titulo:"Plataformas" },
-    { id:"planilhas", titulo:"Planilhas" }
+    { id:"plataformas", titulo:"Plataformas" }
   ]},
   { id:"comunicacao", titulo:"Comunicação Interna", icone:"page", filhos:[
     { id:"quem-somos", titulo:"Quem somos" },
@@ -651,23 +708,26 @@ function emBreve(t, txt){
 
 /* ---------- CENTRAL DE TRABALHO ---------- */
 function pageCentral(){
-  return intro("Central de Trabalho", "Tudo o que você precisa no dia a dia: materiais de apoio, acesso às plataformas e planilhas do setor.") +
+  return intro("Central de Trabalho", "Tudo o que você precisa no dia a dia: materiais de apoio e acesso às plataformas do setor.") +
     tiles([
-      { titulo:"Material de Apoio", descricao:"Procedimentos, contratos e legislação para consulta.", link:"#material", icone:"book" },
-      { titulo:"Plataformas", descricao:"Acesso rápido aos sistemas usados no setor.", link:"#plataformas", icone:"monitor" },
-      { titulo:"Planilhas", descricao:"Planilhas de controle e acompanhamento.", link:"#planilhas", icone:"sheet" }
-    ], "page");
+      { titulo:"Material de Apoio", descricao:"Treinamento, procedimentos, scripts, contratos e legislação.", link:"#material", icone:"book" },
+      { titulo:"Plataformas", descricao:"Acesso rápido aos sistemas usados no setor.", link:"#plataformas", icone:"monitor" }
+    ], "page") +
+    `<div class="section-title">Acesso rápido às plataformas</div>` + tiles(C.plataformas, "monitor");
 }
-function pageMaterial(){ return intro("Material de Apoio", "Documentos de consulta para o atendimento.") + tiles(C.materialApoio, "book"); }
-function pagePlataformas(){ return emBreve("Plataformas", "Os links de acesso aos sistemas do setor serão publicados aqui."); }
-function pagePlanilhas(){ return emBreve("Planilhas", "As planilhas de controle e acompanhamento serão publicadas aqui."); }
+function pageMaterial(){
+  const cats = [...new Set(C.materialApoio.map(m => m.categoria || "Geral"))];
+  return intro("Material de Apoio", "Documentos de consulta para o atendimento.") +
+    cats.map((c, i) => `<div class="section-title"${i===0?' style="margin-top:0"':""}>${esc(c)}</div>` + tiles(C.materialApoio.filter(m => (m.categoria||"Geral") === c), "book")).join("");
+}
+function pagePlataformas(){ return intro("Plataformas", "Links de acesso aos sistemas utilizados pelo setor.") + tiles(C.plataformas, "monitor"); }
 
 /* ---------- COMUNICAÇÃO INTERNA ---------- */
 function pageComunicacao(){
   return intro("Comunicação Interna", "Conheça a Agility, fale com o time e consulte as regras e benefícios do setor.") +
     tiles([
       { titulo:"Quem somos", descricao:"História, missão, visão e valores da Agility.", link:"#quem-somos", icone:"users" },
-      { titulo:"Agenda", descricao:"Reuniões, treinamentos e eventos do setor.", link:"#agenda", icone:"cal" },
+      { titulo:"Agenda", descricao:"Feedbacks, reuniões e escala de sábados do setor.", link:"#agenda", icone:"cal" },
       { titulo:"Regra de Comissionamento", descricao:"Critérios, indicadores e valores da comissão.", link:"#comissionamento", icone:"coin" }
     ], "page") +
     `<div class="section-title">Fale com o time</div>
@@ -745,7 +805,41 @@ function pageQuemSomos(){
     </li>`).join("")}</ol>
   </div>`;
 }
-function pageAgenda(){ return emBreve("Agenda", "Reuniões, treinamentos e eventos do setor serão publicados aqui."); }
+const DIAS_SEM = ["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
+const isoData = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const isoHoje = `${hoje.getFullYear()}-${String(mesAtual).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
+function eventoHtml(e){
+  const d = isoData(e.data);
+  return `<div class="evento${e.data < isoHoje ? " passado" : ""}">
+    <div class="data"><b>${String(d.getDate()).padStart(2,"0")}</b><span>${MESES[d.getMonth()].slice(0,3)}</span></div>
+    <div><div style="font-weight:600">${esc(e.titulo)}${e.data === isoHoje ? ' <span class="tag orange">Hoje</span>' : ""}</div>
+    <div class="muted" style="font-size:12.5px">${cap(DIAS_SEM[d.getDay()])}</div></div>
+  </div>`;
+}
+function pageAgenda(){
+  const ev = [...C.eventos].sort((a,b) => a.data.localeCompare(b.data));
+  const prox = ev.filter(e => e.data >= isoHoje), pass = ev.filter(e => e.data < isoHoje).reverse();
+  const E = C.escalaSabados;
+  const proxSab = (E.linhas.find(l => l.data >= isoHoje) || {}).data;
+  return intro("Agenda", "Feedbacks, reuniões e escala de sábados do setor.") +
+    `<div class="section-title" style="margin-top:0">Próximos eventos</div>
+     <div class="card">${prox.length ? prox.map(eventoHtml).join("") : `<div class="empty">Nenhum evento agendado.</div>`}</div>
+     <div class="section-title">${esc(E.titulo)}</div>
+     <p class="muted" style="margin:-4px 0 12px">${esc(E.duplas)}</p>
+     <div class="card" style="padding:0"><div class="tbl-wrap"><table class="tbl escala">
+       <thead><tr><th>Sábado</th><th>Trabalham</th><th>Folgam</th><th>Observação</th></tr></thead>
+       <tbody>${E.linhas.map(l => {
+         const d = isoData(l.data);
+         const cls = l.data === proxSab ? "prox" : l.data < isoHoje ? "passado" : "";
+         return `<tr class="${cls}">
+           <td class="ramal">${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}${l.data === proxSab ? ' <span class="tag orange">Próximo</span>' : ""}</td>
+           <td><b>${esc(l.trabalham)}</b></td>
+           <td class="muted">${esc(l.folgam)}</td>
+           <td class="muted">${esc(l.obs || "—")}</td>
+         </tr>`; }).join("")}</tbody>
+     </table></div></div>` +
+    (pass.length ? `<div class="section-title">Eventos realizados</div><div class="card">${pass.map(eventoHtml).join("")}</div>` : "");
+}
 
 function pageComissionamento(){
   return `<div class="prose">${intro("Regra de Comissionamento", "Resumo da Política de Comissionamento do setor de Contas a Receber.")}
@@ -820,7 +914,7 @@ function renderFooter(){
 }
 
 /* ---------- ROTEAMENTO ---------- */
-const RENDER = { home:pageHome, central:pageCentral, material:pageMaterial, plataformas:pagePlataformas, planilhas:pagePlanilhas,
+const RENDER = { home:pageHome, central:pageCentral, material:pageMaterial, plataformas:pagePlataformas,
   comunicacao:pageComunicacao, "quem-somos":pageQuemSomos, agenda:pageAgenda, comissionamento:pageComissionamento };
 const APOS = { home:preencherHome, comunicacao:preencherTime };
 function rotaAtual(){ const r = location.hash.slice(1); return RENDER[r] ? r : "home"; }

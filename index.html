@@ -216,6 +216,29 @@ table{border-collapse:collapse;width:100%;}
 .rec-rodape{margin-top:14px;font-size:12.5px;color:var(--text-muted);text-align:center;}
 @keyframes brilho{0%,70%{left:-60%;}100%{left:130%;}}
 
+/* aniversário de empresa */
+.coluna{display:flex;flex-direction:column;gap:18px;min-width:0;}
+.casa-card{background:linear-gradient(170deg,#FFF3EA 0%,var(--card) 50%);}
+.aniv-ico.casa{background:linear-gradient(135deg,#FFB27A,#FF7029);box-shadow:0 4px 12px rgba(255,112,41,.25);}
+.festa.casa{background:linear-gradient(135deg,#C2500F,var(--orange) 55%,#FFB45C);}
+.festa.casa .festa-tag{background:var(--purple-deep);}
+.aniv-data.casa{background:linear-gradient(135deg,#FFD0A8,#FFB27A);color:var(--orange-text);}
+.anos-selo{
+  margin-left:auto;flex:none;width:44px;height:44px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--purple);color:#fff;line-height:1;box-shadow:0 0 0 3px #fff,0 0 0 5px rgba(112,99,240,.3);
+}
+.anos-selo b{font-family:'Sora',sans-serif;font-size:16px;}
+.anos-selo span{font-size:9px;text-transform:uppercase;font-weight:700;margin-top:1px;}
+.casa-prox{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px;margin-top:4px;}
+.casa-prox-item{display:flex;align-items:center;gap:12px;margin-top:8px;}
+.casa-prox-item .t{font-weight:600;}
+.casa-prox-item .s{font-size:12px;color:var(--text-muted);}
+.casa-time{margin-top:14px;}
+.casa-time ul{list-style:none;margin:8px 0 0;padding:0;}
+.casa-time li{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:5px 0;border-bottom:1px dashed var(--border);}
+.casa-time li:last-child{border-bottom:0;}
+.casa-time li b{color:var(--orange-text);white-space:nowrap;font-variant-numeric:tabular-nums;}
+
 /* aniversários */
 .aniv-card{background:linear-gradient(170deg,#F4F0FF 0%,var(--card) 50%);}
 .festa{
@@ -699,7 +722,8 @@ function colaboradores(d){
       nome: pega(l, "nome"),
       dia, mes,
       ramal: pega(l, "ramal"),
-      emails: pega(l, "e-mail", "email").split(/[;,\s]+/).filter(e => e.includes("@"))
+      emails: pega(l, "e-mail", "email").split(/[;,\s]+/).filter(e => e.includes("@")),
+      admissao: isoBR(pega(l, "admissao", "data de admissao"))
     };
   }).filter(c => c.nome);
 }
@@ -768,16 +792,29 @@ function pageHome(){
       <div id="boxRec">${carregando}</div>
     </section>
 
-    <section class="card aniv-card span-4">
-      <div class="aniv-head">
-        <div class="aniv-ico" aria-hidden="true">🎈</div>
-        <div>
-          <div class="rec-eyebrow">Parabéns a você!</div>
-          <h3>Aniversariantes de ${MESES[hoje.getMonth()]}</h3>
+    <div class="span-4 coluna">
+      <section class="card aniv-card">
+        <div class="aniv-head">
+          <div class="aniv-ico" aria-hidden="true">🎈</div>
+          <div>
+            <div class="rec-eyebrow">Parabéns a você!</div>
+            <h3>Aniversariantes de ${MESES[hoje.getMonth()]}</h3>
+          </div>
         </div>
-      </div>
-      <div id="boxAniv">${carregando}</div>
-    </section>
+        <div id="boxAniv">${carregando}</div>
+      </section>
+
+      <section class="card casa-card">
+        <div class="aniv-head">
+          <div class="aniv-ico casa" aria-hidden="true">🏢</div>
+          <div>
+            <div class="rec-eyebrow">Tempo de casa</div>
+            <h3>Aniversário de empresa</h3>
+          </div>
+        </div>
+        <div id="boxCasa">${carregando}</div>
+      </section>
+    </div>
 
     <section class="card span-12">
       ${cardTitulo("news","Últimas notícias")}
@@ -856,6 +893,64 @@ async function preencherHome(){
           <div class="aniv-emoji" aria-hidden="true">${a.dia < dHoje ? "🎁" : "🎈"}</div>
         </li>`).join("")}</ul>`;
       boxA.innerHTML = html || `<div class="aniv-vazio"><div aria-hidden="true">🗓️</div>Nenhum aniversariante este mês.</div>`;
+    }
+  }
+
+  // Aniversário de empresa (coluna "Admissão")
+  const boxC = $("#boxCasa");
+  if (boxC){
+    if (!d.colaboradores) boxC.innerHTML = msgErro;
+    else {
+      const ano = hoje.getFullYear(), dHoje = hoje.getDate();
+      const anosTxt = n => `${n} ${n === 1 ? "ano" : "anos"}`;
+      // próxima data em que cada pessoa completa ano de casa
+      const lista = colaboradores(d).filter(c => c.admissao).map(c => {
+        const [ay, am, ad] = c.admissao.split("-").map(Number);
+        let prox = `${ano}-${String(am).padStart(2,"0")}-${String(ad).padStart(2,"0")}`;
+        if (prox < isoHoje && am !== mesAtual) prox = `${ano+1}${prox.slice(4)}`;
+        return { ...c, am, ad, prox, anos: +prox.slice(0,4) - ay, atual: ano - ay - (am > mesAtual || (am === mesAtual && ad > dHoje) ? 1 : 0) };
+      }).filter(c => c.anos >= 1);
+      const doMes = lista.filter(c => c.am === mesAtual).sort((a,b) => a.ad - b.ad);
+      const festa = doMes.filter(c => c.ad === dHoje), outros = doMes.filter(c => c.ad !== dHoje);
+      let html = "";
+      if (festa.length) html += festa.map(c => `
+        <div class="festa casa">
+          <div class="confete" aria-hidden="true">${Array.from({length:18}, (_, i) => `<i style="--i:${i}"></i>`).join("")}</div>
+          <div class="festa-bolo" aria-hidden="true">🎊</div>
+          <div class="festa-tag">${anosTxt(c.anos)} de Agility!</div>
+          <div class="festa-nome">${esc(c.nome)}</div>
+          <div class="festa-msg">Obrigado por fazer parte da nossa história. 💜</div>
+        </div>`).join("");
+      if (outros.length) html += `<ul class="aniv-lista">${outros.map(c => {
+        const n = c.ad - dHoje;
+        const quando = n === 1 ? "É amanhã! 🥳" : n > 1 ? `Faltam ${n} dias` : "Já comemoramos 💜";
+        return `<li class="${n < 0 ? "passou" : ""}">
+          <div class="aniv-data casa"><b>${String(c.ad).padStart(2,"0")}</b><span>${MESES[c.am-1].slice(0,3)}</span></div>
+          <div><div class="t">${esc(c.nome)}</div><div class="s">${n < 0 ? "Completou" : "Completa"} ${anosTxt(c.anos)} de casa · ${quando}</div></div>
+          <div class="anos-selo" title="${anosTxt(c.anos)} de empresa"><b>${c.anos}</b><span>${c.anos === 1 ? "ano" : "anos"}</span></div>
+        </li>`; }).join("")}</ul>`;
+      if (!doMes.length){
+        const prox = [...lista].sort((a,b) => a.prox.localeCompare(b.prox))[0];
+        html = `<div class="aniv-vazio"><div aria-hidden="true">🗓️</div>Ninguém completa ano de casa em ${MESES[hoje.getMonth()]}.</div>`;
+        if (prox){
+          const mesmos = lista.filter(c => c.prox === prox.prox);
+          html += `<div class="casa-prox">
+            <div class="semana-label">Próximo</div>
+            ${mesmos.map(c => `<div class="casa-prox-item">
+              <div class="aniv-data casa"><b>${String(c.ad).padStart(2,"0")}</b><span>${MESES[c.am-1].slice(0,3)}</span></div>
+              <div><div class="t">${esc(c.nome)}</div><div class="s">Vai completar ${anosTxt(c.anos)} de casa</div></div>
+              <div class="anos-selo"><b>${c.anos}</b><span>${c.anos === 1 ? "ano" : "anos"}</span></div>
+            </div>`).join("")}
+          </div>`;
+        }
+      }
+      // quanto tempo de casa cada um tem hoje
+      const ranking = [...lista].sort((a,b) => a.admissao.localeCompare(b.admissao));
+      if (ranking.length) html += `<div class="casa-time">
+        <div class="semana-label">Tempo de casa do time</div>
+        <ul>${ranking.map(c => `<li><span>${esc(c.nome)}</span><b>${c.atual < 1 ? "menos de 1 ano" : anosTxt(c.atual)}</b></li>`).join("")}</ul>
+      </div>`;
+      boxC.innerHTML = html;
     }
   }
 

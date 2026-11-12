@@ -205,6 +205,9 @@ table{border-collapse:collapse;width:100%;}
   font-family:'Sora',sans-serif;font-weight:800;font-size:15px;color:#fff;background:var(--c1);
   box-shadow:0 0 0 3px #fff,0 0 0 5px color-mix(in srgb,var(--c1) 35%,transparent);
 }
+.premio-avatar img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;}
+.premio-corpo + .premio-corpo{margin-top:12px;}
+.premio-empate{margin-left:auto;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--c1);background:#fff;border-radius:999px;padding:2px 8px;border:1px solid color-mix(in srgb,var(--c1) 25%,transparent);}
 .premio-medalha{position:absolute;right:-8px;bottom:-6px;font-size:18px;}
 .premio-nome{font-family:'Sora',sans-serif;font-weight:700;font-size:15px;line-height:1.25;}
 .premio-frase{font-size:12px;color:var(--text-muted);}
@@ -420,6 +423,16 @@ const CONTEUDO = {
   planilha: {
     base: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjxorymglTDS2sA2h-R4t_pfmrkhx8xFeB6s5QTGzP3-08NxDNKHY16pASth3jJPmgVzS_Bsnkfywf/pub",
     abas: ["0", "1456808010", "306082886", "1078547875", "668087222"]
+  },
+
+  // Fotos do time (aparecem nos reconhecimentos). A chave é o primeiro
+  // nome, em minúsculas e sem acento. Sem foto, aparecem as iniciais.
+  fotos: {
+    evilene:    "fotos/evilene.jpg",
+    leidimeira: "fotos/leidimeira.jpg",
+    erick:      "fotos/erick.jpg",
+    vitoria:    "fotos/vitoria.jpg",
+    luiz:       "fotos/luiz.jpg"
   },
 
   formOpiniao: "https://docs.google.com/forms/d/e/1FAIpQLSfVZfRrCA_8N6zOscJ5qtdT3RLQhpWhhuDCfW_SsLbnqmRyuw/viewform?usp=header",
@@ -972,19 +985,24 @@ async function preencherHome(){
           { cat:"Destaque em monitoria", emoji:"🎯", cor:"verde",   frase:"Excelência no atendimento.",          nome: pega(l, "monitoria"), extra: pega(l, "monitoria nota"), extraLabel:"de nota" },
           { cat:"Crescimento",           emoji:"🚀", cor:"azul",    frase:"Evoluiu muito neste mês.",            nome: pega(l, "crescimento"), extra: pega(l, "crescimento valor"), extraLabel:"de crescimento" }
         ].filter(i => i.nome);
+        // Empate: mais de um nome na mesma célula, separados por " e ", vírgula, ";", "/" ou "&"
+        const nomes = s => s.split(/\s+e\s+|\s*[,;\/&+]\s*/i).map(n => n.trim()).filter(Boolean);
+        const foto = n => (C.fotos || {})[norm(n).split(" ")[0]];
+        const avatar = n => `<div class="premio-avatar">${esc(iniciais(n))}${foto(n) ? `<img src="${esc(foto(n))}" alt="" onerror="this.remove()">` : ""}<span class="premio-medalha" aria-hidden="true">🏅</span></div>`;
         boxR.innerHTML = itens.length ? `<div class="premios">${itens.map(i => `
           <div class="premio ${i.cor}">
             <div class="premio-topo">
               <span class="premio-emoji" aria-hidden="true">${i.emoji}</span>
               <span class="premio-cat">${esc(i.cat)}</span>
+              ${nomes(i.nome).length > 1 ? `<span class="premio-empate">Empate</span>` : ""}
             </div>
-            <div class="premio-corpo">
-              <div class="premio-avatar">${esc(iniciais(i.nome))}<span class="premio-medalha" aria-hidden="true">🏅</span></div>
+            ${nomes(i.nome).map(n => `<div class="premio-corpo">
+              ${avatar(n)}
               <div style="min-width:0">
-                <div class="premio-nome">${esc(i.nome)}</div>
+                <div class="premio-nome">${esc(n)}</div>
                 <div class="premio-frase">${esc(i.frase)}</div>
               </div>
-            </div>
+            </div>`).join("")}
             ${i.extra ? `<div class="premio-valor"><b>${esc(i.extra)}</b> ${esc(i.extraLabel)}</div>` : ""}
           </div>`).join("")}</div>
           <div class="rec-rodape">👏 Parabéns a todos pelo empenho! Continue assim, time.</div>` : `<div class="empty">Nenhum reconhecimento neste mês.</div>`;
